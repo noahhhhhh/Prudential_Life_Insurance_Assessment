@@ -21,6 +21,8 @@ ColNAs <- function(dt, method = "sum", output = "all"){
         return(out)
     } else if (output == "nonZero"){
         return(out[out != 0])
+    } else {
+        return(F)
     }
 }
 
@@ -42,8 +44,28 @@ ColUnique <- function(dt){
 ## Intro: convert class of columns in a data table
 ## Args:
 ##  dt(data.table): a data table
-## Return(numeric): output of unique value stats
-ColUnique <- function(dt){
-    out <- apply(dt, 2, function(x){length(unique(x))})
-    return(out)
+##  cols(a vector of characters): names of targeted columns
+##  class(character): "factor"; "numeric"; "integer"; "character"
+## Return(data.table): output of a data table with the converted class
+ConvertClass <- function(dt, cols, class = "factor"){
+    if (class == "factor"){
+        for (col in cols){
+            dt[, col := as.factor(col)]
+        }
+    } else if (class == "numeric"){
+        for (col in cols){
+            dt[, col := as.numeric(col)]
+        }
+    } else if (class == "integer"){
+        for (col in cols){
+            dt[, col := as.integer(col)]
+        }
+    } else if (class == "character"){
+        for (col in cols){
+            dt[, col := as.character(col)]
+        }
+    } else {
+        return(F)
+    }
+    return(dt)
 }
