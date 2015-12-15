@@ -78,6 +78,7 @@ table(dt.raw.train$Response[is.na(dt.raw.train$Employment_Info_1)])
 #######################
 ## 2.2 class of cols ##
 #######################
+str(dt.raw.train)
 # nominal
 colNominal <- c("Product_Info_1", "Product_Info_2", "Product_Info_3", "Product_Info_5", "Product_Info_6", "Product_Info_7"
                 , "Employment_Info_2", "Employment_Info_3", "Employment_Info_5"
