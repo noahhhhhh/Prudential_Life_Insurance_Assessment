@@ -15,24 +15,45 @@ dim(dt.raw.test)
 dt.raw.sampleSubmit <- fread("data/data_raw/sample_submission.csv")
 dim(dt.raw.sampleSubmit)
 # [1] 19765     2
+
+####################################
+## 1.1 combine the test and train ##
+####################################
+# create a dummy response
+dt.raw.test[, Response := rep(0, dim(dt.raw.test)[1])]
+# create a dummy idnt of test set
+dt.raw.test[, isTest := rep(1, dim(dt.raw.test)[1])]
+# create a dummy idnt of train set
+dt.raw.train[, isTest := rep(0, dim(dt.raw.train)[1])]
+
+# combine the two dts
+identical(names(dt.raw.train), names(dt.raw.test))
+# [1] TRUE
+dt.raw.combine <- rbind(dt.raw.train, dt.raw.test)
+dim(dt.raw.combine); dim(dt.raw.train); dim(dt.raw.test)
+# [1] 79146   129
+# [1] 59381   129
+# [1] 19765   129
 ############################################################################################
 ## 2.0 inspect #############################################################################
 ############################################################################################
 #############
 ## 2.1 NAs ##
 #############
-ColNAs(dt = dt.raw.train, method = "sum", output = "nonZero")
-# Employment_Info_1   Employment_Info_4   Employment_Info_6 Insurance_History_5       Family_Hist_2       Family_Hist_3 
-# 19                6779               10854               25396               28656               34241 
-# Family_Hist_4       Family_Hist_5   Medical_History_1  Medical_History_10  Medical_History_15  Medical_History_24 
-# 19184               41811                8889               58824               44596               55580 
-# Medical_History_32 
-# 58274
-ColNAs(dt = dt.raw.train, method = "mean", output = "nonZero")
-# Employment_Info_4   Employment_Info_6 Insurance_History_5       Family_Hist_2       Family_Hist_3       Family_Hist_4 
-# 0.11                0.18                0.43                0.48                0.58                0.32 
-# Family_Hist_5   Medical_History_1  Medical_History_10  Medical_History_15  Medical_History_24  Medical_History_32 
-# 0.70                0.15                0.99                0.75                0.94                0.98 
+ColNAs(dt = dt.raw.combine, method = "sum", output = "nonZero")
+# Employment_Info_1   Employment_Info_4   Employment_Info_6 Insurance_History_5       Family_Hist_2 
+# 22                8916               14641               33501               38536 
+# Family_Hist_3       Family_Hist_4       Family_Hist_5   Medical_History_1  Medical_History_10 
+# 45305               25861               55435               11861               78388 
+# Medical_History_15  Medical_History_24  Medical_History_32 
+# 59460               74165               77688
+ColNAs(dt = dt.raw.combine, method = "mean", output = "nonZero")
+# Employment_Info_4   Employment_Info_6 Insurance_History_5       Family_Hist_2       Family_Hist_3 
+# 0.11                0.18                0.42                0.49                0.57 
+# Family_Hist_4       Family_Hist_5   Medical_History_1  Medical_History_10  Medical_History_15 
+# 0.33                0.70                0.15                0.99                0.75 
+# Medical_History_24  Medical_History_32 
+# 0.94                0.98 
 
 ## check what is the response like for NAs (result: seems random)
 table(dt.raw.train$Response[is.na(dt.raw.train$Medical_History_32)])
@@ -78,7 +99,7 @@ table(dt.raw.train$Response[is.na(dt.raw.train$Employment_Info_1)])
 #######################
 ## 2.2 class of cols ##
 #######################
-str(dt.raw.train)
+str(dt.raw.combine)
 # nominal
 colNominal <- c("Product_Info_1", "Product_Info_2", "Product_Info_3", "Product_Info_5", "Product_Info_6", "Product_Info_7"
                 , "Employment_Info_2", "Employment_Info_3", "Employment_Info_5"
@@ -94,7 +115,6 @@ colNominal <- c("Product_Info_1", "Product_Info_2", "Product_Info_3", "Product_I
                 , "Medical_History_35", "Medical_History_36", "Medical_History_37", "Medical_History_38", "Medical_History_39"
                 , "Medical_History_40", "Medical_History_41")
 
-apply()
 # continuous
 colContinuous <- c("Product_Info_4", "Ins_Age", "Ht", "Wt", "BMI"
                    , "Employment_Info_1", "Employment_Info_4", "Employment_Info_6"
@@ -108,21 +128,21 @@ colDiscrete <- c("Medical_History_1", "Medical_History_15", "Medical_History_24"
 ## 2.3 unique value ##
 ######################
 # nominal
-ColUnique(dt.raw.train[, colNominal, with = F])
+ColUnique(dt.raw.combine[, colNominal, with = F])
 # Product_Info_1      Product_Info_2      Product_Info_3      Product_Info_5      Product_Info_6 
-# 2                  19                  34                   2                   2 
+# 2                  19                  38                   2                   2 
 # Product_Info_7   Employment_Info_2   Employment_Info_3   Employment_Info_5       InsuredInfo_1 
-# 3                  36                   2                   2                   3 
+# 3                  38                   2                   2                   3 
 # InsuredInfo_2       InsuredInfo_3       InsuredInfo_4       InsuredInfo_5       InsuredInfo_6 
 # 2                  11                   2                   2                   2 
 # InsuredInfo_7 Insurance_History_1 Insurance_History_2 Insurance_History_3 Insurance_History_4 
 # 2                   2                   3                   3                   3 
 # Insurance_History_7 Insurance_History_8 Insurance_History_9       Family_Hist_1   Medical_History_2 
-# 3                   3                   3                   3                 579 
+# 3                   3                   3                   3                 628 
 # Medical_History_3   Medical_History_4   Medical_History_5   Medical_History_6   Medical_History_7 
 # 3                   2                   3                   3                   3 
 # Medical_History_8   Medical_History_9  Medical_History_10  Medical_History_11  Medical_History_12 
-# 3                   3                 104                   3                   3 
+# 3                   3                 127                   3                   3 
 # Medical_History_13  Medical_History_14  Medical_History_16  Medical_History_17  Medical_History_18 
 # 3                   3                   3                   3                   3 
 # Medical_History_19  Medical_History_20  Medical_History_21  Medical_History_22  Medical_History_23 
@@ -130,21 +150,30 @@ ColUnique(dt.raw.train[, colNominal, with = F])
 # Medical_History_25  Medical_History_26  Medical_History_27  Medical_History_28  Medical_History_29 
 # 3                   3                   3                   3                   3 
 # Medical_History_30  Medical_History_31  Medical_History_33  Medical_History_34  Medical_History_35 
-# 3                   3                   2                   3                   3 
+# 3                   3                   3                   3                   3 
 # Medical_History_36  Medical_History_37  Medical_History_38  Medical_History_39  Medical_History_40 
-# 3                   3                   2                   3                   3 
+# 3                   3                   3                   3                   3 
 # Medical_History_41 
 # 3 
 
 # discrete
-ColUnique(dt.raw.train[, colDiscrete, with = F])
+ColUnique(dt.raw.combine[, colDiscrete, with = F])
 # Medical_History_1 Medical_History_15 Medical_History_24 Medical_History_32 
-# 172                242                228                 96 
+# 179                242                234                107
 
-
-
-
-
+############################################################################################
+## 3.0 clean ###############################################################################
+############################################################################################
+####################################
+## 3.1 impute the factor features ##
+####################################
+colnames.colNAs <- names(ColNAs(dt = dt.raw.combine, method = "sum", output = "nonZero"))
+colnames.colNAs
+# [1] "Employment_Info_1"   "Employment_Info_4"   "Employment_Info_6"   "Insurance_History_5"
+# [5] "Family_Hist_2"       "Family_Hist_3"       "Family_Hist_4"       "Family_Hist_5"      
+# [9] "Medical_History_1"   "Medical_History_10"  "Medical_History_15"  "Medical_History_24" 
+# [13] "Medical_History_32" 
+colNominal
 
 
 
