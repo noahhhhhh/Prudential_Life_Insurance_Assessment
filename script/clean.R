@@ -164,9 +164,27 @@ ColUnique(dt.raw.combine[, colDiscrete, with = F])
 ############################################################################################
 ## 3.0 clean ###############################################################################
 ############################################################################################
+##########################################################
+## 3.1 before impute, create a new feature (Num_of_NAs) ##
+##########################################################
+Num_of_NAs <- apply(dt.raw.combine, 1, function (x) sum(is.na(x)))
+Employment_Info_Num_of_NAs <- apply(dt.raw.combine[, grep("Employment_Info", colnames(dt.raw.combine)), with = F], 1, function (x) sum(is.na(x)))
+Insurance_History_Num_of_NAs <- apply(dt.raw.combine[, grep("Insurance_History", colnames(dt.raw.combine)), with = F], 1, function (x) sum(is.na(x)))
+Family_Hist_Num_of_NAs <- apply(dt.raw.combine[, grep("Family_Hist", colnames(dt.raw.combine)), with = F], 1, function (x) sum(is.na(x)))
+Medical_History_Num_of_NAs <- apply(dt.raw.combine[, grep("Medical_History", colnames(dt.raw.combine)), with = F], 1, function (x) sum(is.na(x)))
+
+dt.raw.combine[, Num_of_NAs := Num_of_NAs]
+dt.raw.combine[, Employment_Info_Num_of_NAs := Employment_Info_Num_of_NAs]
+dt.raw.combine[, Insurance_History_Num_of_NAs := Insurance_History_Num_of_NAs]
+dt.raw.combine[, Family_Hist_Num_of_NAs := Family_Hist_Num_of_NAs]
+dt.raw.combine[, Medical_History_Num_of_NAs := Medical_History_Num_of_NAs]
+dim(dt.raw.combine)
+# [1] 79146   134
+
 ####################################
 ## 3.1 impute the factor features ##
 ####################################
+## impute nominal NAs features
 colnames.colNAs <- names(ColNAs(dt = dt.raw.combine, method = "sum", output = "nonZero"))
 colnames.colNAs
 # [1] "Employment_Info_1"   "Employment_Info_4"   "Employment_Info_6"   "Insurance_History_5"
@@ -174,6 +192,60 @@ colnames.colNAs
 # [9] "Medical_History_1"   "Medical_History_10"  "Medical_History_15"  "Medical_History_24" 
 # [13] "Medical_History_32" 
 colNominal
+# [1] "Product_Info_1"      "Product_Info_2"      "Product_Info_3"      "Product_Info_5"     
+# [5] "Product_Info_6"      "Product_Info_7"      "Employment_Info_2"   "Employment_Info_3"  
+# [9] "Employment_Info_5"   "InsuredInfo_1"       "InsuredInfo_2"       "InsuredInfo_3"      
+# [13] "InsuredInfo_4"       "InsuredInfo_5"       "InsuredInfo_6"       "InsuredInfo_7"      
+# [17] "Insurance_History_1" "Insurance_History_2" "Insurance_History_3" "Insurance_History_4"
+# [21] "Insurance_History_7" "Insurance_History_8" "Insurance_History_9" "Family_Hist_1"      
+# [25] "Medical_History_2"   "Medical_History_3"   "Medical_History_4"   "Medical_History_5"  
+# [29] "Medical_History_6"   "Medical_History_7"   "Medical_History_8"   "Medical_History_9"  
+# [33] "Medical_History_10"  "Medical_History_11"  "Medical_History_12"  "Medical_History_13" 
+# [37] "Medical_History_14"  "Medical_History_16"  "Medical_History_17"  "Medical_History_18" 
+# [41] "Medical_History_19"  "Medical_History_20"  "Medical_History_21"  "Medical_History_22" 
+# [45] "Medical_History_23"  "Medical_History_25"  "Medical_History_26"  "Medical_History_27" 
+# [49] "Medical_History_28"  "Medical_History_29"  "Medical_History_30"  "Medical_History_31" 
+# [53] "Medical_History_33"  "Medical_History_34"  "Medical_History_35"  "Medical_History_36" 
+# [57] "Medical_History_37"  "Medical_History_38"  "Medical_History_39"  "Medical_History_40" 
+# [61] "Medical_History_41" 
+
+colnames.nominal.NAs <- intersect(colNominal, colnames.colNAs)
+colnames.nominal.NAs
+# [1] "Medical_History_10"
+# before
+sort(unique(dt.raw.combine$Medical_History_10), na.last = T)
+# [1]   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  19  20  21  22  24  26  27  28
+# [26]  32  35  39  40  42  43  44  47  48  49  50  51  52  54  55  56  57  58  59  61  62  63  64  66  69
+# [51]  71  75  76  77  79  80  83  84  85  86  87  91  92  97  98 102 104 111 112 113 115 116 117 119 120
+# [76] 121 122 125 126 127 131 133 136 137 139 142 146 147 148 150 156 158 160 162 167 170 171 175 176 180
+# [101] 181 182 183 185 190 191 196 199 201 207 216 218 219 220 221 223 225 229 230 231 234 235 236 237 238
+# [126] 240  NA
+# after
+dt.raw.combine[, Medical_History_10 := ifelse(is.na(dt.raw.combine$Medical_History_10), -1, dt.raw.combine$Medical_History_10)]
+# [1]  -1   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  19  20  21  22  24  26  27
+# [26]  28  32  35  39  40  42  43  44  47  48  49  50  51  52  54  55  56  57  58  59  61  62  63  64  66
+# [51]  69  71  75  76  77  79  80  83  84  85  86  87  91  92  97  98 102 104 111 112 113 115 116 117 119
+# [76] 120 121 122 125 126 127 131 133 136 137 139 142 146 147 148 150 156 158 160 162 167 170 171 175 176
+# [101] 180 181 182 183 185 190 191 196 199 201 207 216 218 219 220 221 223 225 229 230 231 234 235 236 237
+# [126] 238 240
+
+## impute discrete NAs features
+colnames.discrete.NAs <- intersect(colDiscrete, colnames.colNAs)
+colnames.discrete.NAs
+# [1] "Medical_History_1"  "Medical_History_15" "Medical_History_24" "Medical_History_32"
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
