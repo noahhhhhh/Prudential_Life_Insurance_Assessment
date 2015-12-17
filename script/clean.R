@@ -212,40 +212,103 @@ colNominal
 colnames.nominal.NAs <- intersect(colNominal, colnames.colNAs)
 colnames.nominal.NAs
 # [1] "Medical_History_10"
-# before
-sort(unique(dt.raw.combine$Medical_History_10), na.last = T)
-# [1]   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  19  20  21  22  24  26  27  28
-# [26]  32  35  39  40  42  43  44  47  48  49  50  51  52  54  55  56  57  58  59  61  62  63  64  66  69
-# [51]  71  75  76  77  79  80  83  84  85  86  87  91  92  97  98 102 104 111 112 113 115 116 117 119 120
-# [76] 121 122 125 126 127 131 133 136 137 139 142 146 147 148 150 156 158 160 162 167 170 171 175 176 180
-# [101] 181 182 183 185 190 191 196 199 201 207 216 218 219 220 221 223 225 229 230 231 234 235 236 237 238
-# [126] 240  NA
-# after
-dt.raw.combine[, Medical_History_10 := ifelse(is.na(dt.raw.combine$Medical_History_10), -1, dt.raw.combine$Medical_History_10)]
-# [1]  -1   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  19  20  21  22  24  26  27
-# [26]  28  32  35  39  40  42  43  44  47  48  49  50  51  52  54  55  56  57  58  59  61  62  63  64  66
-# [51]  69  71  75  76  77  79  80  83  84  85  86  87  91  92  97  98 102 104 111 112 113 115 116 117 119
-# [76] 120 121 122 125 126 127 131 133 136 137 139 142 146 147 148 150 156 158 160 162 167 170 171 175 176
-# [101] 180 181 182 183 185 190 191 196 199 201 207 216 218 219 220 221 223 225 229 230 231 234 235 236 237
-# [126] 238 240
+
+# recall that there are so many NAs in this field
+# Medical_History_10
+# 0.99
+
+# simply remove it
+dt.raw.combine[, Medical_History_10 := NULL]
 
 ## impute discrete NAs features
 colnames.discrete.NAs <- intersect(colDiscrete, colnames.colNAs)
 colnames.discrete.NAs
 # [1] "Medical_History_1"  "Medical_History_15" "Medical_History_24" "Medical_History_32"
 
+# recall that there are so many NAs in these fields
 
+# Medical_History_1   Medical_History_15 
+# 0.15                0.75 
+# Medical_History_24  Medical_History_32 
+# 0.94                0.98 
 
+# impute Medical History 24, 32
+# simply remove Medical History 24, 32
+dt.raw.combine[, Medical_History_24 := NULL]
+dt.raw.combine[, Medical_History_32 := NULL]
 
+# impute Medical History 15
+# impute Medical History 15 as median (version 1)
+med.Medical_History_15 <- median(dt.raw.combine$Medical_History_15, na.rm = T)
+dt.raw.combine[, Medical_History_15_Impute_Median := ifelse(is.na(dt.raw.combine$Medical_History_15), med.Medical_History_15, dt.raw.combine$Medical_History_15)]
+# impute Medical History 15 as a very large number 2016 (version 2)
+dt.raw.combine[, Medical_History_15_Impute_2016 := ifelse(is.na(dt.raw.combine$Medical_History_15), 2016, dt.raw.combine$Medical_History_15)]
+# remove Medical History 15 now
+dt.raw.combine[, Medical_History_15 := NULL]
 
+# impute Medical History 1
+# impute Medical History 1 as median (version 1)
+med.Medical_History_1 <- median(dt.raw.combine$Medical_History_1, na.rm = T)
+dt.raw.combine[, Medical_History_1_Impute_Median := ifelse(is.na(dt.raw.combine$Medical_History_1), med.Medical_History_1, dt.raw.combine$Medical_History_1)]
+# impute Medical History 1 as a very large number 2016 (version 2)
+dt.raw.combine[, Medical_History_1_Impute_2016 := ifelse(is.na(dt.raw.combine$Medical_History_1), 2016, dt.raw.combine$Medical_History_1)]
+# remove Medical History 1 now
+dt.raw.combine[, Medical_History_1 := NULL]
 
+## impute continual NAs features
+colnames.continuous.NAs <- intersect(colContinuous, colnames.colNAs)
+colnames.continuous.NAs
+# [1] "Employment_Info_1"   "Employment_Info_4"   "Employment_Info_6"   "Insurance_History_5"
+# [5] "Family_Hist_2"       "Family_Hist_3"       "Family_Hist_4"       "Family_Hist_5"
 
+# proportion of NAs
+# Employment_Info_4   Employment_Info_6 Insurance_History_5       Family_Hist_2       Family_Hist_3 
+# 0.11                0.18                0.42                0.49                0.57 
+# Family_Hist_4       Family_Hist_5
+# 0.33                0.70
 
+# impute as mean (version 1)
+mean.Employment_Info_1 <- mean(dt.raw.combine$Employment_Info_1, na.rm = T)
+mean.Employment_Info_4 <- mean(dt.raw.combine$Employment_Info_2, na.rm = T)
+mean.Employment_Info_6 <- mean(dt.raw.combine$Employment_Info_6, na.rm = T)
+mean.Insurance_History_5 <- mean(dt.raw.combine$Insurance_History_5, na.rm = T)
+mean.Family_Hist_2 <- mean(dt.raw.combine$Family_Hist_2, na.rm = T)
+mean.Family_Hist_3 <- mean(dt.raw.combine$Family_Hist_3, na.rm = T)
+mean.Family_Hist_4 <- mean(dt.raw.combine$Family_Hist_4, na.rm = T)
+mean.Family_Hist_5 <- mean(dt.raw.combine$Family_Hist_5, na.rm = T)
 
+dt.raw.combine[, Employment_Info_1_Impute_Mean := ifelse(is.na(dt.raw.combine$Employment_Info_1), mean.Employment_Info_1, dt.raw.combine$Employment_Info_1)]
+dt.raw.combine[, Employment_Info_4_Impute_Mean := ifelse(is.na(dt.raw.combine$Employment_Info_4), mean.Employment_Info_4, dt.raw.combine$Employment_Info_4)]
+dt.raw.combine[, Employment_Info_6_Impute_Mean := ifelse(is.na(dt.raw.combine$Employment_Info_6), mean.Employment_Info_6, dt.raw.combine$Employment_Info_6)]
+dt.raw.combine[, Insurance_History_5_Impute_Mean := ifelse(is.na(dt.raw.combine$Insurance_History_5), mean.Insurance_History_5, dt.raw.combine$Insurance_History_5)]
+dt.raw.combine[, Family_Hist_2_Impute_Mean := ifelse(is.na(dt.raw.combine$Family_Hist_2), mean.Family_Hist_2, dt.raw.combine$Family_Hist_2)]
+dt.raw.combine[, Family_Hist_3_Impute_Mean := ifelse(is.na(dt.raw.combine$Family_Hist_3), mean.Family_Hist_3, dt.raw.combine$Family_Hist_3)]
+dt.raw.combine[, Family_Hist_4_Impute_Mean := ifelse(is.na(dt.raw.combine$Family_Hist_4), mean.Family_Hist_4, dt.raw.combine$Family_Hist_4)]
+dt.raw.combine[, Family_Hist_5_Impute_Mean := ifelse(is.na(dt.raw.combine$Family_Hist_5), mean.Family_Hist_5, dt.raw.combine$Family_Hist_5)]
 
+# impute as a very large number 1
+dt.raw.combine[, Employment_Info_1_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_1), 1, dt.raw.combine$Employment_Info_1)]
+dt.raw.combine[, Employment_Info_4_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_4), 1, dt.raw.combine$Employment_Info_4)]
+dt.raw.combine[, Employment_Info_6_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_6), 1, dt.raw.combine$Employment_Info_6)]
+dt.raw.combine[, Insurance_History_5_Impute_1 := ifelse(is.na(dt.raw.combine$Insurance_History_5), 1, dt.raw.combine$Insurance_History_5)]
+dt.raw.combine[, Family_Hist_2_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_2), 1, dt.raw.combine$Family_Hist_2)]
+dt.raw.combine[, Family_Hist_3_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_3), 1, dt.raw.combine$Family_Hist_3)]
+dt.raw.combine[, Family_Hist_4_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_4), 1, dt.raw.combine$Family_Hist_4)]
+dt.raw.combine[, Family_Hist_5_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_5), 1, dt.raw.combine$Family_Hist_5)]
 
+# remove original features
+dt.raw.combine[, Employment_Info_1 := NULL]
+dt.raw.combine[, Employment_Info_2 := NULL]
+dt.raw.combine[, Employment_Info_6 := NULL]
+dt.raw.combine[, Insurance_History_5 := NULL]
+dt.raw.combine[, Family_Hist_2 := NULL]
+dt.raw.combine[, Family_Hist_3 := NULL]
+dt.raw.combine[, Family_Hist_4 := NULL]
+dt.raw.combine[, Family_Hist_5 := NULL]
 
-
+# check again on NAs
+ColNAs(dt.raw.combine, method = "sum", output = "NonZero")
+# [1] FALSE # cool all imputed!
 
 
 
