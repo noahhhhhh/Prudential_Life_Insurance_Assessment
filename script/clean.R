@@ -182,7 +182,7 @@ dim(dt.raw.combine)
 # [1] 79146   134
 
 ####################################
-## 3.1 impute the factor features ##
+## 3.2 impute the factor features ##
 ####################################
 ## impute nominal NAs features
 colnames.colNAs <- names(ColNAs(dt = dt.raw.combine, method = "sum", output = "nonZero"))
@@ -219,6 +219,8 @@ colnames.nominal.NAs
 
 # simply remove it
 dt.raw.combine[, Medical_History_10 := NULL]
+# remove from colNominal
+colNominal <- colNominal[colNominal != "Medical_History_10"]
 
 ## impute discrete NAs features
 colnames.discrete.NAs <- intersect(colDiscrete, colnames.colNAs)
@@ -236,6 +238,8 @@ colnames.discrete.NAs
 # simply remove Medical History 24, 32
 dt.raw.combine[, Medical_History_24 := NULL]
 dt.raw.combine[, Medical_History_32 := NULL]
+# remove from colDiscrete
+colDiscrete <- colDiscrete[!colDiscrete %in% c("Medical_History_24", "Medical_History_32")]
 
 # impute Medical History 15
 # impute Medical History 15 as median (version 1)
@@ -246,6 +250,9 @@ dt.raw.combine[, Medical_History_15_Impute_2016 := ifelse(is.na(dt.raw.combine$M
 # remove Medical History 15 now
 dt.raw.combine[, Medical_History_15 := NULL]
 
+# add to colDiscrete
+colDiscrete <- c(colDiscrete, "Medical_History_15_Impute_Median", "Medical_History_15_Impute_2016")
+
 # impute Medical History 1
 # impute Medical History 1 as median (version 1)
 med.Medical_History_1 <- median(dt.raw.combine$Medical_History_1, na.rm = T)
@@ -254,6 +261,9 @@ dt.raw.combine[, Medical_History_1_Impute_Median := ifelse(is.na(dt.raw.combine$
 dt.raw.combine[, Medical_History_1_Impute_2016 := ifelse(is.na(dt.raw.combine$Medical_History_1), 2016, dt.raw.combine$Medical_History_1)]
 # remove Medical History 1 now
 dt.raw.combine[, Medical_History_1 := NULL]
+
+# add to colDiscrete
+colDiscrete <- c(colDiscrete, "Medical_History_1_Impute_Median", "Medical_History_1_Impute_2016")
 
 ## impute continual NAs features
 colnames.continuous.NAs <- intersect(colContinuous, colnames.colNAs)
@@ -285,6 +295,10 @@ dt.raw.combine[, Family_Hist_2_Impute_Mean := ifelse(is.na(dt.raw.combine$Family
 dt.raw.combine[, Family_Hist_3_Impute_Mean := ifelse(is.na(dt.raw.combine$Family_Hist_3), mean.Family_Hist_3, dt.raw.combine$Family_Hist_3)]
 dt.raw.combine[, Family_Hist_4_Impute_Mean := ifelse(is.na(dt.raw.combine$Family_Hist_4), mean.Family_Hist_4, dt.raw.combine$Family_Hist_4)]
 dt.raw.combine[, Family_Hist_5_Impute_Mean := ifelse(is.na(dt.raw.combine$Family_Hist_5), mean.Family_Hist_5, dt.raw.combine$Family_Hist_5)]
+# add to colContinuous
+colContinuous <- c(colContinuous, "Employment_Info_1_Impute_Mean", "Employment_Info_4_Impute_Mean", "Employment_Info_6_Impute_Mean"
+                   , "Insurance_History_5_Impute_Mean", "Family_Hist_2_Impute_Mean", "Family_Hist_3_Impute_Mean"
+                   , "Family_Hist_4_Impute_Mean", "Family_Hist_5_Impute_Mean")
 
 # impute as a very large number 1
 dt.raw.combine[, Employment_Info_1_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_1), 1, dt.raw.combine$Employment_Info_1)]
@@ -295,20 +309,80 @@ dt.raw.combine[, Family_Hist_2_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hi
 dt.raw.combine[, Family_Hist_3_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_3), 1, dt.raw.combine$Family_Hist_3)]
 dt.raw.combine[, Family_Hist_4_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_4), 1, dt.raw.combine$Family_Hist_4)]
 dt.raw.combine[, Family_Hist_5_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_5), 1, dt.raw.combine$Family_Hist_5)]
+# add to colContinuous
+colContinuous <- c(colContinuous, "Employment_Info_1_Impute_1", "Employment_Info_4_Impute_1", "Employment_Info_6_Impute_1"
+                   , "Insurance_History_5_Impute_1", "Family_Hist_2_Impute_1", "Family_Hist_3_Impute_1"
+                   , "Family_Hist_4_Impute_1", "Family_Hist_5_Impute_1")
 
 # remove original features
 dt.raw.combine[, Employment_Info_1 := NULL]
-dt.raw.combine[, Employment_Info_2 := NULL]
+dt.raw.combine[, Employment_Info_4 := NULL]
 dt.raw.combine[, Employment_Info_6 := NULL]
 dt.raw.combine[, Insurance_History_5 := NULL]
 dt.raw.combine[, Family_Hist_2 := NULL]
 dt.raw.combine[, Family_Hist_3 := NULL]
 dt.raw.combine[, Family_Hist_4 := NULL]
 dt.raw.combine[, Family_Hist_5 := NULL]
+# remove from colContinuous
+colContinuous <- colContinuous[!colContinuous %in% c("Employment_Info_1", "Employment_Info_4", "Employment_Info_6"
+                                                     , "Insurance_History_5", "Family_Hist_2", "Family_Hist_3"
+                                                     , "Family_Hist_4", "Family_Hist_5")]
 
 # check again on NAs
 ColNAs(dt.raw.combine, method = "sum", output = "NonZero")
 # [1] FALSE # cool all imputed!
+
+#######################################
+## 3.3 sort out the class of columns ##
+#######################################
+#############
+## nominal ##
+#############
+colNominal
+# no. of levels 
+no.of.levels <- sapply(dt.raw.combine[, colNominal, with = F], function (x) {length(names(table(x)))})
+# no. of levels > 3
+no.of.levels[no.of.levels > 3]
+# Product_Info_2    Product_Info_3 Employment_Info_2     InsuredInfo_3 Medical_History_2 
+# 19                38                38                11               628 
+
+# binary encoding for no. of levels > 3
+# before that, create a new feature for Product_Info_2
+sort(unique(dt.raw.combine$Product_Info_2))
+# [1] "A1" "A2" "A3" "A4" "A5" "A6" "A7" "A8" "B1" "B2" "C1" "C2" "C3" "C4" "D1" "D2" "D3" "D4" "E1"
+
+dt.raw.combine[, Product_Info_2_A := ifelse(grepl("A", dt.raw.combine$Product_Info_2), 1, 0)]
+dt.raw.combine[, Product_Info_2_B := ifelse(grepl("B", dt.raw.combine$Product_Info_2), 1, 0)]
+dt.raw.combine[, Product_Info_2_C := ifelse(grepl("C", dt.raw.combine$Product_Info_2), 1, 0)]
+dt.raw.combine[, Product_Info_2_D := ifelse(grepl("D", dt.raw.combine$Product_Info_2), 1, 0)]
+dt.raw.combine[, Product_Info_2_E := ifelse(grepl("E", dt.raw.combine$Product_Info_2), 1, 0)]
+
+dt.raw.combine[, Product_Info_2_1 := ifelse(grepl("1", dt.raw.combine$Product_Info_2), 1, 0)]
+
+# now start handling the no. of levels > 3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

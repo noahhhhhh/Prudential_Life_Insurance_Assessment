@@ -69,3 +69,36 @@ ConvertClass <- function(dt, cols, class = "factor"){
     }
     return(dt)
 }
+
+############################################################################################
+## 4. BinaryEncode #########################################################################
+############################################################################################
+## Intro: Binary Encoding for categorial features
+## Args:
+##  dt(data.table): a data table
+##  cols(a vector of characters): names of targeted columns
+##  class(character): "factor"; "numeric"; "integer"; "character"
+## Return(data.table): output of a data table with the converted class
+BinaryEncode <- function(dt, cols){
+    for(col in cols){
+        
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
