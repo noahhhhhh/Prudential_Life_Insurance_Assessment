@@ -77,12 +77,33 @@ ConvertClass <- function(dt, cols, class = "factor"){
 ## Args:
 ##  dt(data.table): a data table
 ##  cols(a vector of characters): names of targeted columns
-##  class(character): "factor"; "numeric"; "integer"; "character"
-## Return(data.table): output of a data table with the converted class
+## Return(data.table): output of a data table with the additional binary columns
 BinaryEncode <- function(dt, cols){
+    require(miscFuncs)
+    require(stringr)
     for(col in cols){
-        
+        # unique values dict
+        dict.uniq <- data.table(ID = rownames(unique(dt[, col, with = F]))
+                                , unique(dt[, col, with = F]))
+        # decimal to binary vector, e.g. 19 --> 10011
+        vec.dec <- bin(dim(dict.uniq)[1])
+        # length of the binary vector, e.g. 19 --> 10011 --> 5
+        num.len <- length(vec.dec)
+        # binary encoding
+        # ID corresponding to col
+        dt.col <- merge(dt[, col, with = F], dict.uniq, by = col, all.x = T)
+        dt.col[, ID := as.integer(ID)]
+        # encoded vector
+        vec.bin <- unlist(apply(dt.col[, "ID", with = F], 1, function(x)(str_pad(paste(bin(x), collapse = ""), num.len, side = "left", pad = "0"))))
+        # set up the col names and binary values
+        vec.col  <- as.character()
+        for (i in 1:num.len){
+            vec.col[i] <- paste(col, "_bin_", i, sep = "")
+            dt[, vec.col[i]:= substr(vec.bin, i, i)]
+        }
+        dt[, col := NULL]
     }
+    return(dt)
 }
 
 

@@ -345,6 +345,7 @@ no.of.levels <- sapply(dt.raw.combine[, colNominal, with = F], function (x) {len
 no.of.levels[no.of.levels > 3]
 # Product_Info_2    Product_Info_3 Employment_Info_2     InsuredInfo_3 Medical_History_2 
 # 19                38                38                11               628 
+colNominal.needBinEnc <- names(no.of.levels[no.of.levels > 3])
 
 # binary encoding for no. of levels > 3
 # before that, create a new feature for Product_Info_2
@@ -360,7 +361,7 @@ dt.raw.combine[, Product_Info_2_E := ifelse(grepl("E", dt.raw.combine$Product_In
 dt.raw.combine[, Product_Info_2_1 := ifelse(grepl("1", dt.raw.combine$Product_Info_2), 1, 0)]
 
 # now start handling the no. of levels > 3
-
+dt.raw.combine <- BinaryEncode(dt.raw.combine, colNominal.needBinEnc)
 
 
 
