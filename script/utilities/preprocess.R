@@ -39,39 +39,7 @@ ColUnique <- function(dt){
 }
 
 ############################################################################################
-## 3. ConvertClass #########################################################################
-############################################################################################
-## Intro: convert class of columns in a data table
-## Args:
-##  dt(data.table): a data table
-##  cols(a vector of characters): names of targeted columns
-##  class(character): "factor"; "numeric"; "integer"; "character"
-## Return(data.table): output of a data table with the converted class
-ConvertClass <- function(dt, cols, class = "factor"){
-    if (class == "factor"){
-        for (col in cols){
-            dt[, col := as.factor(col)]
-        }
-    } else if (class == "numeric"){
-        for (col in cols){
-            dt[, col := as.numeric(col)]
-        }
-    } else if (class == "integer"){
-        for (col in cols){
-            dt[, col := as.integer(col)]
-        }
-    } else if (class == "character"){
-        for (col in cols){
-            dt[, col := as.character(col)]
-        }
-    } else {
-        return(F)
-    }
-    return(dt)
-}
-
-############################################################################################
-## 4. BinaryEncode #########################################################################
+## 3. BinaryEncode #########################################################################
 ############################################################################################
 ## Intro: Binary Encoding for categorial features
 ## Args:
