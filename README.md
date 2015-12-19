@@ -11,7 +11,7 @@ The results will help Prudential better understand the predictive power of the d
 
 ## TODO
 1. [16/12/2015 - **Done**] Imputation
-2. [16/12/2015 - **Not Done Yet**] Sort out the classes of columns
+2. [16/12/2015 - **Done**] Sort out the classes of columns
 3. [18/12/2015 - **Not Done Yet**] Log transform the features if needed
 
 ## LOG
