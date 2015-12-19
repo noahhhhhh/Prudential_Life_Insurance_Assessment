@@ -34,9 +34,10 @@ The results will help Prudential better understand the predictive power of the d
     , Medical_History_31, Medical_History_33, Medical_History_34, Medical_History_35 
     , Medical_History_36, Medical_History_37, Medical_History_38, Medical_History_39 
     , Medical_History_40, Medical_History_41
-    + **one hot encoding**: for level == 2 (now in integer class) - Product_Info_1, Product_Info_5, Product_Info_6 , , , Employment_Info_3, Employment_Info_5
-, InsuredInfo_2, InsuredInfo_4, InsuredInfo_5, InsuredInfo_6, InsuredInfo_7 
-, Insurance_History_1, Medical_History_4, Medical_History_22 
+    + **one hot encoding**: for level == 2 (now in integer class) - Product_Info_1, Product_Info_5, Product_Info_6
+    , Employment_Info_3, Employment_Info_5
+    , InsuredInfo_2, InsuredInfo_4, InsuredInfo_5, InsuredInfo_6, InsuredInfo_7 
+    , Insurance_History_1, Medical_History_4, Medical_History_22 
 
 
 ## Initial Thoughts
