@@ -101,7 +101,7 @@ BinaryEncode <- function(dt, cols){
             vec.col[i] <- paste(col, "_bin_", i, sep = "")
             dt[, vec.col[i]:= substr(vec.bin, i, i)]
         }
-        dt[, col := NULL]
+        dt <- dt[, !col, with = F]
     }
     return(dt)
 }
