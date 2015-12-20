@@ -20,6 +20,10 @@ dt.raw.combine[, Employment_Info_Num_of_NAs := Employment_Info_Num_of_NAs]
 dt.raw.combine[, Insurance_History_Num_of_NAs := Insurance_History_Num_of_NAs]
 dt.raw.combine[, Family_Hist_Num_of_NAs := Family_Hist_Num_of_NAs]
 dt.raw.combine[, Medical_History_Num_of_NAs := Medical_History_Num_of_NAs]
+
+# add to colDiscrete
+colDiscrete <- c(colDiscrete, "Num_of_NAs", "Employment_Info_Num_of_NAs", "Insurance_History_Num_of_NAs"
+                 , "Family_Hist_Num_of_NAs", "Medical_History_Num_of_NAs")
 dim(dt.raw.combine)
 # [1] 79146   134
 

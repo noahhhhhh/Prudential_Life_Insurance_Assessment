@@ -6,9 +6,9 @@ source("script/utilities/preprocess.R") # utilities functions for preprocessing 
 ############################################################################################
 ## 1.0 class-ify ###########################################################################
 ############################################################################################
-###################
+#################
 ## 1.1 nominal ##
-###################
+#################
 colNominal
 # no. of levels 
 no.of.levels <- sapply(dt.imputed.combine[, colNominal, with = F], function (x) {length(names(table(x)))})
@@ -35,8 +35,18 @@ dt.imputed.combine[, Product_Info_2_1 := ifelse(grepl("1", dt.imputed.combine$Pr
 
 # now start handling the no. of levels > 3
 dt.imputed.combine <- BinaryEncode(dt.imputed.combine, colNominal.needBinEnc)
+# add to colNominal
+colNominal.newBinEnc <- as.character()
+for (col in colNominal.needBinEnc){
+    col <- paste(col, "_bin", sep = "")
+    colNominal.newBinEnc <- c(colNominal.newBinEnc, names(dt.imputed.combine)[grep(col, names(dt.imputed.combine))])
+}
+colNominal <- c(colNominal, colNominal.newBinEnc)
 # remove colNominal.needBinEnc from colNominal
 colNominal <- colNominal[!colNominal %in% colNominal.needBinEnc]
+# add to colNominal
+colNominal <- c(colNominal, "Product_Info_2_A", "Product_Info_2_B", "Product_Info_2_C", "Product_Info_2_D"
+                , "Product_Info_2_E", "Product_Info_2_1")
 
 ##############################
 ## 1.1.2 no. of levels == 2 ##
@@ -112,9 +122,6 @@ colNominal.needDummyVars
 # [33] "Medical_History_31"  "Medical_History_33"  "Medical_History_34"  "Medical_History_35" 
 # [37] "Medical_History_36"  "Medical_History_37"  "Medical_History_38"  "Medical_History_39" 
 # [41] "Medical_History_40"  "Medical_History_41" 
-dt.imputed.combine.needDummyVars <- dt.imputed.combine[, c("Id", colNominal.needDummyVars), with = F][, lapply(.SD, as.factor), by = Id]
-dt.imputed.combine <- data.table(dt.imputed.combine[, !c("Id", colNominal.needDummyVars), with = F], dt.imputed.combine.needDummyVars)
-# [1] 79146   173
 
 ##################
 ## 1.2 discrete ##
@@ -242,11 +249,20 @@ sort(names(dt.imputed.combine))
 # [171] "Product_Info_7"                   "Response"                        
 # [173] "Wt"  
 
+###################
+## 1.4 class-ify ##
+###################
+# colNomial to factor
+# previously forgot the medical_keyword, now add them in
+colNominal <- c(colNominal, names(dt.imputed.combine)[grepl("Medical_Keyword", names(dt.imputed.combine))])
+dt.imputed.combine.nominal <- dt.imputed.combine[, colNominal, with = F][, lapply(.SD, as.factor)]
+dt.imputed.combine <- data.table(dt.imputed.combine[, !colNominal, with = F], dt.imputed.combine.nominal)
+
 ############################################################################################
 ## 2.0 save ################################################################################
 ############################################################################################
 dt.class.ified.combine <- dt.imputed.combine
-save(dt.class.ified.combine, file = "data/data_clean/dt_class_ified_combine.RData")
+save(dt.class.ified.combine, colNominal, colDiscrete, colContinuous, file = "data/data_clean/dt_class_ified_combine.RData")
 
 
 
