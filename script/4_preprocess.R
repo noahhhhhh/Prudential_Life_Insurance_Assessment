@@ -29,9 +29,35 @@ formula.levels3 <- paste("~", paste(colnames.levels3, collapse = " + "))
 dummies <- dummyVars(formula.levels3, dt.class.ified.combine)
 dt.class_ified_level3 <- predict(dummies, newdata = dt.class.ified.combine)
 dt.class_ified_level3 <- data.table(dt.class_ified_level3)
+dt.class_ified_level3 <- dt.class_ified_level3[, lapply(.SD, as.factor)]
+sapply(dt.class_ified_level3, class) # all factors
 
 # combine
 dt.class.ified.combine <- data.table(dt.class.ified.combine[, !colnames.levels3, with = F], dt.class_ified_level3)
 ##########################
-## 1.1 centre and scale ##
+## 1.2 centre and scale ##
 ##########################
+prep.class.ified.combine <- preProcess(dt.class.ified.combine[, !c("Id", "Response", "isTest"), with = F]
+                                       # , method = c("range")
+                                       , method = c("center", "scale")
+                                       , verbose = T)
+dt.class.ified.combine <- predict(prep.class.ified.combine, dt.class.ified.combine)
+
+############################################################################################
+## 2.0 save ################################################################################
+############################################################################################
+dt.preprocessed.combine <- dt.class.ified.combine
+save(dt.preprocessed.combine, file = "data/data_preprocess/dt_proprocess_combine.RData")
+
+
+
+
+
+
+
+
+
+
+
+
+
