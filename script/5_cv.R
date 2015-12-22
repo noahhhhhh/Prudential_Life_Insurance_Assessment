@@ -3,6 +3,7 @@ setwd("/Volumes/Data Science/Google Drive/data_science_competition/kaggle/Pruden
 load("data/data_preprocess/dt_proprocess_combine.RData")
 require(data.table)
 require(caret)
+require(Metrics)
 ############################################################################################
 ## 1.0 xgboost - gbtree ####################################################################
 ############################################################################################
@@ -35,14 +36,14 @@ cv.xgb.out <- xgb.cv(data = dmx.train
                      , objective = "multi:softmax"
                      , num_class = 8
                      , params = list(nthread = 8
-                                     , feval = evalerror
-                                     , eta = .3
+                                     , eta = .025
                                      , max_depth = 16
-                                     , subsample = 1
-                                     , colsample_bytree = 1
+                                     , subsample = .8
+                                     , colsample_bytree = .7
                                      )
+                     , feval = evalerror
                      , nrounds = 500
-                     , nfold = 5
+                     , nfold = 10
                      , verbose = T)
 cv.xgb.out
 # train.merror.mean train.merror.std test.merror.mean test.merror.std
@@ -73,3 +74,5 @@ md.xgb.out <- xgb.train(data = dmx.train
                         # , nfold = 5
                         , verbose = T)
 
+pred.train <- predict(md.xgb.out, x.train)
+ScoreQuadraticWeightedKappa(y.train,round(pred.train))
