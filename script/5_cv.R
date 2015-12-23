@@ -9,24 +9,29 @@ require(Metrics)
 ############################################################################################
 require(xgboost)
 require(Ckmeans.1d.dp)
-ind.train <- createDataPartition(dt.raw.combine[isTest == 0]$Response, p = .666, list = F)
-dt.train <- dt.raw.combine[isTest == 0][ind.train]
-dt.valid <- dt.raw.combine[isTest == 0][-ind.train]
+col.impute_mean_median <- names(dt.preprocessed.combine)[grep("Impute_Mean|Impute_Median", names(dt.preprocessed.combine))]
+col.impute_num <- names(dt.preprocessed.combine)[grep("Impute_1|Impute_2016", names(dt.preprocessed.combine))]
+# try impute with mean/median
+dt.preprocessed.combine <- dt.preprocessed.combine[, !col.impute_num, with = F]
+
+ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .666, list = F)
+dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
+dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
 dim(dt.train); dim(dt.valid);
 
 x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
-y.train <- dt.train$Response - 1
+y.train <- dt.train$Response
 dmx.train <- xgb.DMatrix(data =  x.train, label = y.train)
 
 x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[, -1]
-y.valid <- dt.valid$Response - 1
+y.valid <- dt.valid$Response
 dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
 
 # x.valid2 <- model.matrix(PRED ~., dt.valid2[, !c("ACCOUNT_ID"), with = F])[, -1]
 # y.valid2 <- ifelse(as.integer(dt.valid2$PRED) == 1, 0, 1)
 # dmx.valid2 <- xgb.DMatrix(data =  x.valid2, label = y.valid2)
 
-x.test <- model.matrix(~., dt.raw.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
+x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
 
 evalerror <- function(preds, dtrain){
     labels <- getinfo(dtrain, "label")
@@ -65,25 +70,40 @@ cv.xgb.out
 # 499:          0.000000         0.000000         0.420067        0.004003
 # 500:          0.000000         0.000000         0.420151        0.004034
 
-set.seed(1)
-md.xgb.out <- xgb.train(data = dmx.train
-                        , booster = "gbtree"
-                        , objective = "multi:softmax"
-                        , num_class = 8
-                        , params = list(nthread = 8
-                                        , eta = .3
-                                        , max_depth = 16
-                                        , subsample = .8
-                                        , colsample_bytree = .7
-                        )
-                        , feval = evalerror
-                        , nrounds = 500
-                        , early.stop.round = 10
-                        , maximize = T
-                        , watchlist = list(train = dmx.train, valid = dmx.valid)
-                        # , nfold = 10
-                        , verbose = T
-                        )
+pred.valid <- as.numeric()
+for (i in 1:10){
+    set.seed(i * 1024)
+    md.xgb.out <- xgb.train(data = dmx.train
+                            , booster = "gbtree"
+                            , objective = "reg:linear"
+                            # , num_class = 8
+                            , params = list(nthread = 8
+                                            , eta = .025
+                                            , max_depth = 16
+                                            , subsample = .8
+                                            , colsample_bytree = .3
+                                            , eval_metric = "rmse"
+                            )
+                            # , feval = evalerror
+                            , nrounds = 415
+                            # , early.stop.round = 20
+                            # , maximize = F
+                            , watchlist = list(train = dmx.train, valid = dmx.valid)
+                            # , nfold = 10
+                            , verbose = T
+    )
+    pred.valid <- pred.valid + predict(md.xgb.out, x.valid)
+}
 
-pred.train <- predict(md.xgb.out, x.train)
-ScoreQuadraticWeightedKappa(y.train,round(pred.train))
+ScoreQuadraticWeightedKappa(y.valid, round(pred.valid/10))
+
+# pred.valid <- as.numeric()
+# for (i in 1:10){
+#     pred.valid <- pred.valid + predict(list.md[[i]], x.valid)
+# }
+# 
+# print(ScoreQuadraticWeightedKappa(y.valid,round(pred.valid/10)))
+# 
+# pred.valid <- predict(list.md[[2]], x.valid)
+# ScoreQuadraticWeightedKappa(y.valid,round(pred.valid))
+# # .595

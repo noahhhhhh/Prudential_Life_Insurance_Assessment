@@ -141,7 +141,7 @@ colContinuous <- c(colContinuous, "Employment_Info_1_Impute_Mean", "Employment_I
                    , "Insurance_History_5_Impute_Mean", "Family_Hist_2_Impute_Mean", "Family_Hist_3_Impute_Mean"
                    , "Family_Hist_4_Impute_Mean", "Family_Hist_5_Impute_Mean")
 
-# impute as a very large number 1
+# impute as a very large number 1 (version 2)
 dt.raw.combine[, Employment_Info_1_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_1), 1, dt.raw.combine$Employment_Info_1)]
 dt.raw.combine[, Employment_Info_4_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_4), 1, dt.raw.combine$Employment_Info_4)]
 dt.raw.combine[, Employment_Info_6_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_6), 1, dt.raw.combine$Employment_Info_6)]
