@@ -57,35 +57,28 @@ colNominal
 
 colnames.nominal.NAs <- intersect(colNominal, colnames.colNAs)
 colnames.nominal.NAs
-# [1] "Medical_History_10"
-
-# recall that there are so many NAs in this field
-# Medical_History_10
-# 0.99
-
-# simply remove it
-dt.raw.combine[, Medical_History_10 := NULL]
-# remove from colNominal
-colNominal <- colNominal[colNominal != "Medical_History_10"]
+# character(0)
 
 ## impute discrete NAs features
 colnames.discrete.NAs <- intersect(colDiscrete, colnames.colNAs)
 colnames.discrete.NAs
-# [1] "Medical_History_1"  "Medical_History_15" "Medical_History_24" "Medical_History_32"
+# [1] "Medical_History_1"  "Medical_History_10" "Medical_History_15" "Medical_History_24"
+# [5] "Medical_History_32"
 
 # recall that there are so many NAs in these fields
 
-# Medical_History_1   Medical_History_15 
-# 0.15                0.75 
+# Medical_History_1   Medical_History_10    Medical_History_15 
+# 0.15                0.99                  0.75 
 # Medical_History_24  Medical_History_32 
 # 0.94                0.98 
 
-# impute Medical History 24, 32
+# impute Medical History 10, 24, 32
 # simply remove Medical History 24, 32
+dt.raw.combine[, Medical_History_10 := NULL]
 dt.raw.combine[, Medical_History_24 := NULL]
 dt.raw.combine[, Medical_History_32 := NULL]
 # remove from colDiscrete
-colDiscrete <- colDiscrete[!colDiscrete %in% c("Medical_History_24", "Medical_History_32")]
+colDiscrete <- colDiscrete[!colDiscrete %in% c("Medical_History_10", "Medical_History_24", "Medical_History_32")]
 
 # impute Medical History 15
 # impute Medical History 15 as median (version 1)

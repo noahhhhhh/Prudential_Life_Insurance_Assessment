@@ -107,7 +107,7 @@ colNominal <- c("Product_Info_1", "Product_Info_2", "Product_Info_3", "Product_I
                 , "Insurance_History_1", "Insurance_History_2", "Insurance_History_3", "Insurance_History_4", "Insurance_History_7", "Insurance_History_8", "Insurance_History_9"
                 , "Family_Hist_1"
                 , "Medical_History_2", "Medical_History_3", "Medical_History_4", "Medical_History_5", "Medical_History_6"
-                , "Medical_History_7", "Medical_History_8", "Medical_History_9", "Medical_History_10", "Medical_History_11"
+                , "Medical_History_7", "Medical_History_8", "Medical_History_9", "Medical_History_11"
                 , "Medical_History_12", "Medical_History_13", "Medical_History_14", "Medical_History_16", "Medical_History_17"
                 , "Medical_History_18", "Medical_History_19", "Medical_History_20", "Medical_History_21", "Medical_History_22"
                 , "Medical_History_23", "Medical_History_25", "Medical_History_26", "Medical_History_27", "Medical_History_28"
@@ -122,7 +122,7 @@ colContinuous <- c("Product_Info_4", "Ins_Age", "Ht", "Wt", "BMI"
                    , "Family_Hist_2", "Family_Hist_3", "Family_Hist_4", "Family_Hist_5")
 
 # discrete
-colDiscrete <- c("Medical_History_1", "Medical_History_15", "Medical_History_24", "Medical_History_32")
+colDiscrete <- c("Medical_History_1", "Medical_History_10", "Medical_History_15", "Medical_History_24", "Medical_History_32")
 
 ######################
 ## 2.3 unique value ##
@@ -141,8 +141,8 @@ ColUnique(dt.raw.combine[, colNominal, with = F])
 # 3                   3                   3                   3                 628 
 # Medical_History_3   Medical_History_4   Medical_History_5   Medical_History_6   Medical_History_7 
 # 3                   2                   3                   3                   3 
-# Medical_History_8   Medical_History_9  Medical_History_10  Medical_History_11  Medical_History_12 
-# 3                   3                 127                   3                   3 
+# Medical_History_8   Medical_History_9  Medical_History_11  Medical_History_12 
+# 3                   3                   3                   3 
 # Medical_History_13  Medical_History_14  Medical_History_16  Medical_History_17  Medical_History_18 
 # 3                   3                   3                   3                   3 
 # Medical_History_19  Medical_History_20  Medical_History_21  Medical_History_22  Medical_History_23 
@@ -158,8 +158,8 @@ ColUnique(dt.raw.combine[, colNominal, with = F])
 
 # discrete
 ColUnique(dt.raw.combine[, colDiscrete, with = F])
-# Medical_History_1 Medical_History_15 Medical_History_24 Medical_History_32 
-# 179                242                234                107
+# Medical_History_1 Medical_History_10 Medical_History_15 Medical_History_24 Medical_History_32 
+# 179                127                242                234                107 
 
 ############################################################################################
 ## 3.0 save ################################################################################
