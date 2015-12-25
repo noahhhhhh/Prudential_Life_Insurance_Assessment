@@ -70,24 +70,24 @@ cv.xgb.out
 # 499:          0.000000         0.000000         0.420067        0.004003
 # 500:          0.000000         0.000000         0.420151        0.004034
 
-pred.valid <- as.numeric()
-for (i in 1:10){
+pred.valid <- rep(0, length(y.valid))
+for (i in 1:1){
     set.seed(i * 1024)
     md.xgb.out <- xgb.train(data = dmx.train
-                            , booster = "gbtree"
+                            , booster = "gblinear"
                             , objective = "reg:linear"
                             # , num_class = 8
                             , params = list(nthread = 8
-                                            , eta = .025
+                                            , eta = .3
                                             , max_depth = 16
-                                            , subsample = .8
-                                            , colsample_bytree = .3
+                                            , subsample = 1
+                                            , colsample_bytree = 1
                                             , eval_metric = "rmse"
                             )
                             # , feval = evalerror
-                            , nrounds = 415
+                            , nrounds = 8000
                             # , early.stop.round = 20
-                            # , maximize = F
+                            , maximize = F
                             , watchlist = list(train = dmx.train, valid = dmx.valid)
                             # , nfold = 10
                             , verbose = T
@@ -95,7 +95,7 @@ for (i in 1:10){
     pred.valid <- pred.valid + predict(md.xgb.out, x.valid)
 }
 
-ScoreQuadraticWeightedKappa(y.valid, round(pred.valid/10))
+ScoreQuadraticWeightedKappa(y.valid, round(pred.valid))
 
 # pred.valid <- as.numeric()
 # for (i in 1:10){
