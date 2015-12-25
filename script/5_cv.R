@@ -1,6 +1,7 @@
 rm(list = ls()); gc();
 setwd("/Volumes/Data Science/Google Drive/data_science_competition/kaggle/Prudential_Life_Insurance_Assessment/")
 load("data/data_preprocess/dt_proprocess_combine.RData")
+source("script/utilities/metrics.R")
 require(data.table)
 require(caret)
 require(Metrics)
@@ -9,15 +10,17 @@ require(Metrics)
 ############################################################################################
 require(xgboost)
 require(Ckmeans.1d.dp)
-col.impute_mean_median <- names(dt.preprocessed.combine)[grep("Impute_Mean|Impute_Median", names(dt.preprocessed.combine))]
+cat("prepare train, valid, and test data set\n")
+col.impute_median <- names(dt.preprocessed.combine)[grep("Impute_Median", names(dt.preprocessed.combine))]
 col.impute_num <- names(dt.preprocessed.combine)[grep("Impute_1|Impute_2016", names(dt.preprocessed.combine))]
 # try impute with mean/median
 dt.preprocessed.combine <- dt.preprocessed.combine[, !col.impute_num, with = F]
 
-ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .666, list = F)
+ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F)
 dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
 dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
-dim(dt.train); dim(dt.valid);
+dt.test <- dt.preprocessed.combine[isTest == 1]
+dim(dt.train); dim(dt.valid); dim(dt.test)
 
 x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
 y.train <- dt.train$Response
@@ -33,77 +36,117 @@ dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
 
 x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
 
-evalerror <- function(preds, dtrain){
-    labels <- getinfo(dtrain, "label")
-    err <- ScoreQuadraticWeightedKappa(labels,round(preds))
-    
-    return(list(metric = "kappa", value = err))
-}
-
+cat("cross validate xgb\n")
 set.seed(1)
 cv.xgb.out <- xgb.cv(data = dmx.train
                      , booster = "gbtree"
-                     , objective = "multi:softmax"
-                     , num_class = 8
+                     , objective = "reg:linear"
                      , params = list(nthread = 8
                                      , eta = .025
                                      , max_depth = 16
-                                     , subsample = .8
-                                     , colsample_bytree = .7
+                                     , subsample = 1
+                                     , colsample_bytree = 1
                                      )
-                     , feval = evalerror
-                     , nrounds = 500
-                     , nfold = 10
+                     , metricds = "rsme"
+                     , early.stop.round = 20
+                     , maximize = F
+                     , nrounds = 230
+                     , nfold = 3
+                     , watchlist = list(train = dmx.train, valid = dmx.valid)
                      , verbose = T
+                     , prediction = T
                      )
-cv.xgb.out
-# train.merror.mean train.merror.std test.merror.mean test.merror.std
-# 1:          0.265093         0.001707         0.457992        0.004032
-# 2:          0.222824         0.002236         0.442970        0.004030
-# 3:          0.196658         0.001475         0.438760        0.003786
-# 4:          0.178972         0.001054         0.435071        0.002821
-# 5:          0.164430         0.000798         0.433152        0.002445
-# ---                                                                    
-# 496:          0.000000         0.000000         0.420319        0.003892
-# 497:          0.000000         0.000000         0.420319        0.003944
-# 498:          0.000000         0.000000         0.420353        0.004047
-# 499:          0.000000         0.000000         0.420067        0.004003
-# 500:          0.000000         0.000000         0.420151        0.004034
+cv.xgb.out$dt
+# train.rmse.mean train.rmse.std test.rmse.mean test.rmse.std
+# 1:        5.566481       0.002367       5.570122      0.005044
+# 2:        5.441065       0.002204       5.448319      0.004888
+# 3:        5.318805       0.002026       5.330019      0.004783
+# 4:        5.199889       0.001838       5.214973      0.004599
+# 5:        5.084187       0.001939       5.103412      0.004409
+# ---                                                            
+# 226:        0.753447       0.024109       1.882757      0.015178
+# 227:        0.752108       0.024230       1.882771      0.015226
+# 228:        0.750607       0.024336       1.882764      0.015289
+# 229:        0.748594       0.024004       1.882736      0.015280
+# 230:        0.746942       0.023797       1.882719      0.015299
 
+# Quadratic Weighted Kappa
+ScoreQuadraticWeightedKappa(y.train,round(cv.xgb.out$pred))
+# [1] 0.5921439
+
+SQWKfun = function(x = seq(1.5, 7.5, by = 1)) {
+    cuts = c(min(cv.xgb.out$pred), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(cv.xgb.out$pred))
+    pred = as.numeric(Hmisc::cut2(cv.xgb.out$pred, cuts))
+    err = Metrics::ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
+    return(-err)
+}
+optCuts = optim(seq(1.5, 7.5, by = 1), SQWKfun)
+optCuts
+# $par
+# [1] 2.782926 4.071472 3.490766 4.830848 5.581213 6.645683 6.074274
+# 
+# $value
+# [1] -0.6322359
+# 
+# $counts
+# function gradient 
+# 292       NA 
+# 
+# $convergence
+# [1] 0
+# 
+# $message
+# NULL
+
+# training QW Kappa
+pred.train <- as.numeric(Hmisc::cut2(cv.xgb.out$pred, c(-Inf, optCuts$par, Inf)))
+ScoreQuadraticWeightedKappa(pred.train, y.train)
+# [1] 0.6322359
+
+cat("train xgb\n")
+set.seed(1)
 pred.valid <- rep(0, length(y.valid))
 for (i in 1:1){
     set.seed(i * 1024)
     md.xgb.out <- xgb.train(data = dmx.train
-                            , booster = "gblinear"
+                            , booster = "gbtree"
                             , objective = "reg:linear"
-                            # , num_class = 8
                             , params = list(nthread = 8
-                                            , eta = .3
+                                            , eta = .025
                                             , max_depth = 16
                                             , subsample = 1
                                             , colsample_bytree = 1
-                                            , eval_metric = "rmse"
                             )
-                            # , feval = evalerror
-                            , nrounds = 8000
-                            # , early.stop.round = 20
+                            , metricds = "rsme"
+                            , early.stop.round = 20
                             , maximize = F
+                            , nrounds = 297
+                            # , nfold = 3
                             , watchlist = list(train = dmx.train, valid = dmx.valid)
-                            # , nfold = 10
                             , verbose = T
+                            # , prediction = T
     )
     pred.valid <- pred.valid + predict(md.xgb.out, x.valid)
 }
 
 ScoreQuadraticWeightedKappa(y.valid, round(pred.valid))
+# [1] 0.6148074
 
-# pred.valid <- as.numeric()
-# for (i in 1:10){
-#     pred.valid <- pred.valid + predict(list.md[[i]], x.valid)
-# }
-# 
-# print(ScoreQuadraticWeightedKappa(y.valid,round(pred.valid/10)))
-# 
-# pred.valid <- predict(list.md[[2]], x.valid)
-# ScoreQuadraticWeightedKappa(y.valid,round(pred.valid))
-# # .595
+cat("apply the optCuts\n")
+pred.valid <- as.numeric(Hmisc::cut2(pred.valid, c(-Inf, optCuts$par, Inf)))
+ScoreQuadraticWeightedKappa(pred.valid, y.valid)
+table(pred.valid)
+# 1    2    3    4    5    6    7    8 
+# 457  375  371  623  761  574  761 2015
+
+cat("submit")
+pred.test <- predict(md.xgb.out, x.test)
+pred.test <- as.integer(Hmisc::cut2(pred.test, c(-Inf, optCuts$par, Inf)))
+table(pred.test)
+# 1    2    3    4    5    6    7    8 
+# 1557 1197 1151 2114 2569 1992 2465 6720 
+dt.submit = data.table(Id = dt.test$Id)
+dt.submit[, Response := pred.test]
+write.csv(dt.submit, "submit/003_init_xgb_with_optim.csv", row.names = FALSE)
+
+
