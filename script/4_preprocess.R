@@ -118,10 +118,28 @@ dt.class.ified.combine <- data.table(dt.class.ified.combine[, !colnames.levels3,
 ##########################
 ## 1.2 nzv and nearZero ##
 ##########################
-nzv.train <- nearZeroVar(dt.class.ified.combine[isTest == 0, !c("isTest"), with = F], saveMetrics = T)
-nzv.test <- nearZeroVar(dt.class.ified.combine[isTest == 1, !c("isTest"), with = F], saveMetrics = T)
+nzv.train <- nearZeroVar(dt.class.ified.combine[isTest == 0, !c("Id", "Response", "isTest"), with = F], saveMetrics = T)
+nzv.test <- nearZeroVar(dt.class.ified.combine[isTest == 1,!c("Id", "Response", "isTest"), with = F], saveMetrics = T)
 
-nzv.train
+col.nzv.train <- rownames(nzv.train[nzv.train$nzv, ])
+length(col.nzv.train)
+# 141
+col.nzv.test <- rownames(nzv.test[nzv.test$nzv , ])
+length(col.nzv.test)
+# [1] 133
+
+col.nzv <- union(col.nzv.test, col.nzv.train)
+length(col.nzv)
+# 143
+
+# exclude them (version 1)
+dt.class.ified.combine <- dt.class.ified.combine[, - col.nzv, with = F]
+dim(dt.class.ified.combine)
+# [1] 79146   114
+
+# select them (version 2)
+# NX: to be continued
+
 ##########################
 ## 1.3 centre and scale ##
 ##########################
@@ -130,8 +148,6 @@ prep.class.ified.combine <- preProcess(dt.class.ified.combine[, !c("Id", "Respon
                                        , method = c("center", "scale")
                                        , verbose = T)
 dt.class.ified.combine <- predict(prep.class.ified.combine, dt.class.ified.combine)
-
-
 
 ############################################################################################
 ## 2.0 save ################################################################################
