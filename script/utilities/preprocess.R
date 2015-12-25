@@ -74,7 +74,26 @@ BinaryEncode <- function(dt, cols){
     return(dt)
 }
 
-
+############################################################################################
+## 4. ConvertNonNumFactorToNumFactor #######################################################
+############################################################################################
+## Intro: Convert non-numeric factor to a numeric factor
+## Args:
+##  dt(data.table): a data table
+##  col(a vector of characters): names of a targeted column
+## Return(data.table): output of a data table with the additional binary columns
+ConvertNonNumFactorToNumFactor <- function(dt, col){
+    # unique values dict
+    dict.uniq <- data.table(ID = rownames(unique(dt[, col, with = F]))
+                            , unique(dt[, col, with = F]))
+    # ID corresponding to col
+    dt.col <- merge(dt, dict.uniq, by = col, all.x = T)
+    # set the name of the new col
+    colname <- paste(col, "_toNum", sep = "")
+    setnames(dt.col, names(dt.col), c(names(dt.col)[-length(names(dt.col))], colname))
+    
+    return(dt.col)
+}
 
 
 

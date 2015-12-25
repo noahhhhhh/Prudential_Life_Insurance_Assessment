@@ -144,6 +144,7 @@ SQWK = makeMeasure(id = "SQWK", minimize = FALSE, properties = c("regr"), best =
 
 ## now try to find the optimal cutpoints that maximises the SQWK measure based on the Cross-Validated predictions
 cv = crossval(lrn, trainTask, iter = 3, measures = SQWK, show.info = TRUE)
+# 001_mlr_xgb_sample_code
 # [Resample] cross-validation iter: 1
 # [0]	train-rmse:4.237062
 # [50]	train-rmse:1.638368
@@ -154,15 +155,30 @@ cv = crossval(lrn, trainTask, iter = 3, measures = SQWK, show.info = TRUE)
 # [0]	train-rmse:4.241641
 # [50]	train-rmse:1.650577
 # [Resample] Result: SQWK.test.mean= 0.6
+
+# 002_mlr_xgb_sample_code_nzvV1
+# [Resample] cross-validation iter: 1
+# [0]	train-rmse:4.242285
+# [50]	train-rmse:1.704227
+# [Resample] cross-validation iter: 2
+# [0]	train-rmse:4.232747
+# [50]	train-rmse:1.731642
+# [Resample] cross-validation iter: 3
+# [0]	train-rmse:4.246967
+# [50]	train-rmse:1.725553
+# [Resample] Result: SQWK.test.mean=0.551
 optCuts = optim(seq(1.5, 7.5, by = 1), SQWKfun, pred = cv$pred)
 optCuts
 # $par
 # [1] 1.571734 3.414594 4.144019 4.888056 5.537057 6.251994 6.834168
 ## now train the model on all training data
 tr = train(lrn, trainTask)
-# 002_mlr_xgb_sample_code
+# 001_mlr_xgb_sample_code
 # [0]	train-rmse:4.235723
 # [50]	train-rmse:1.695176
+# 002_mlr_xgb_sample_code_nzvV1
+# [0]	train-rmse:4.241325
+# [50]	train-rmse:1.769261
 ## predict using the optimal cut-points 
 pred = predict(tr, testTask)
 preds = as.numeric(Hmisc::cut2(pred$data$response, c(-Inf, optCuts$par, Inf)))
@@ -171,6 +187,6 @@ table(preds)
 ## create submission file
 submission = data.frame(Id = testId)
 submission$Response = as.integer(preds)
-write.csv(submission, "submit/002_mlr_xgb_sample_code_nzvV1.R", row.names = FALSE)
+write.csv(submission, "submit/002_mlr_xgb_sample_code_nzvV1.csv", row.names = FALSE)
 
 
