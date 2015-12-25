@@ -39,6 +39,7 @@ The results will help Prudential better understand the predictive power of the d
     , InsuredInfo_2, InsuredInfo_4, InsuredInfo_5, InsuredInfo_6, InsuredInfo_7 
     , Insurance_History_1, Medical_History_4, Medical_History_22 
 3. There is a technical debt which I threw away all the nzv at once (version 1). A version 2 solution needs to be performed later on where these nzvs will be selected.
+4. There is a technical debt for optimising QW kappa based on valid data/cv.
 
 ## Initial Thoughts
 1. Add a feature about the No. of NAs in each section, e.g. NUM_OF_NAS_EMPLOYMENT, NUM_OF_NAS_FAMILY.
