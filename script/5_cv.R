@@ -5,17 +5,17 @@ source("script/utilities/metrics.R")
 require(data.table)
 require(caret)
 require(Metrics)
+require(Hmisc)
 ############################################################################################
 ## 1.0 xgboost - gbtree ####################################################################
 ############################################################################################
+################################
+## 1.1 train, valid, and test ##
+################################
 require(xgboost)
 require(Ckmeans.1d.dp)
 cat("prepare train, valid, and test data set\n")
-col.impute_median <- names(dt.preprocessed.combine)[grep("Impute_Median", names(dt.preprocessed.combine))]
-col.impute_num <- names(dt.preprocessed.combine)[grep("Impute_1|Impute_2016", names(dt.preprocessed.combine))]
-# try impute with mean/median
-dt.preprocessed.combine <- dt.preprocessed.combine[, !col.impute_num, with = F]
-
+set.seed(888)
 ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F)
 dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
 dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
@@ -30,123 +30,155 @@ x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[,
 y.valid <- dt.valid$Response
 dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
 
-# x.valid2 <- model.matrix(PRED ~., dt.valid2[, !c("ACCOUNT_ID"), with = F])[, -1]
-# y.valid2 <- ifelse(as.integer(dt.valid2$PRED) == 1, 0, 1)
-# dmx.valid2 <- xgb.DMatrix(data =  x.valid2, label = y.valid2)
-
 x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
 
+################################
+## 1.2 xgb with n fold #########
+################################
 cat("cross validate xgb\n")
-set.seed(1)
-cv.xgb.out <- xgb.cv(data = dmx.train
-                     , booster = "gbtree"
-                     , objective = "reg:linear"
-                     , params = list(nthread = 8
-                                     , eta = .025
-                                     , max_depth = 16
-                                     , subsample = 1
-                                     , colsample_bytree = 1
-                                     )
-                     , metricds = "rsme"
-                     , early.stop.round = 20
-                     , maximize = F
-                     , nrounds = 230
-                     , nfold = 3
-                     , watchlist = list(train = dmx.train, valid = dmx.valid)
-                     , verbose = T
-                     , prediction = T
-                     )
-cv.xgb.out$dt
-# train.rmse.mean train.rmse.std test.rmse.mean test.rmse.std
-# 1:        5.566481       0.002367       5.570122      0.005044
-# 2:        5.441065       0.002204       5.448319      0.004888
-# 3:        5.318805       0.002026       5.330019      0.004783
-# 4:        5.199889       0.001838       5.214973      0.004599
-# 5:        5.084187       0.001939       5.103412      0.004409
-# ---                                                            
-# 226:        0.753447       0.024109       1.882757      0.015178
-# 227:        0.752108       0.024230       1.882771      0.015226
-# 228:        0.750607       0.024336       1.882764      0.015289
-# 229:        0.748594       0.024004       1.882736      0.015280
-# 230:        0.746942       0.023797       1.882719      0.015299
+set.seed(888)
+# create a 3 folds
+folds <- createFolds(dt.train$Response, k = 3, list = F)
 
-# Quadratic Weighted Kappa
-ScoreQuadraticWeightedKappa(y.train,round(cv.xgb.out$pred))
-# [1] 0.5921439
+# set up the parameters
+# 1: m
+cv.booster <- c("gbtree", "gblinear")
+# 2: n
+cv.eta <- c(.001, .025, .05, .075, .1, .2, .5)
+cv.nroudns <- c(8000, 5000, 3000, 2000, 1500, 1200, 1000)
+cv.print.every.n <- c(250, 150, 100, 75, 50, 40, 30)
+# 3: n
+cv.min_child_weight <- c(10, 20, 20, 30, 30, 40, 40)
+cv.max_depth <- rep(8, 7)
+cv.subsample <- c(.9, .8, .8, .7, .7, .6, .6)
+cv.colsample_bytree <- c(.8, .8, .7, .7, .6, .6, .5)
 
-SQWKfun = function(x = seq(1.5, 7.5, by = 1)) {
-    cuts = c(min(cv.xgb.out$pred), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(cv.xgb.out$pred))
-    pred = as.numeric(Hmisc::cut2(cv.xgb.out$pred, cuts))
-    err = Metrics::ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
+# set up vector n
+vec.n <- as.numeric()
+# set up vecor m
+vec.m <- as.numeric()
+# set up vector score
+vec.score <- as.numeric()
+
+# setup the predictions
+# train a model on folds
+
+for(m in 1:2){ # boosters - param 1
+    for(n in 1:7){ # parameters - param 2 and 3
+        # set up a score metric for folds
+        score.folds <- 0
+        for(k in 1:3){ # folds
+            set.seed(m * 8 + n * 64 + k * 512)
+            # dmx.train.fold
+            dt.train.fold <- dt.train[folds != k]
+            x.train.fold <- model.matrix(Response ~., dt.train.fold[, !c("Id", "isTest"), with = F])[, -1]
+            y.train.fold <- dt.train.fold$Response
+            dmx.train.fold <- xgb.DMatrix(data =  x.train.fold, label = y.train.fold)
+            # dmx.valid.fold
+            dt.valid.fold <- dt.train[folds == k]
+            x.valid.fold <- model.matrix(Response ~., dt.valid.fold[, !c("Id", "isTest"), with = F])[, -1]
+            y.valid.fold <- dt.valid.fold$Response
+            dmx.valid.fold <- xgb.DMatrix(data =  x.valid.fold, label = y.valid.fold)
+            # train
+            cv.xgb.out <- xgb.train(data = dmx.train.fold
+                                    , booster = cv.booster[m]
+                                    , objective = "reg:linear"
+                                    , params = list(nthread = 8
+                                                    , eta = cv.eta[n]
+                                                    , min_child_weight = cv.min_child_weight[n]
+                                                    , max_depth = cv.max_depth[n]
+                                                    , subsample = cv.subsample[n]
+                                                    , colsample_bytree = cv.colsample_bytree[n]
+                                                    , metrics = "rmse"
+                                    )
+                                    # , feval = QuadraticWeightedKappa
+                                    , early.stop.round = 20
+                                    , maximize = F
+                                    , print.every.n = cv.print.every.n[n]
+                                    , nrounds = cv.nroudns[n]
+                                    , watchlist = list(valid = dmx.valid.fold, train = dmx.train.fold)
+                                    , verbose = T
+            )
+            pred.valid.fold <- predict(cv.xgb.out, dmx.valid.fold)
+            SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
+                cuts <- c(min(pred.valid.fold), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.valid.fold))
+                pred <- as.numeric(cut2(pred.valid.fold, cuts))
+                err <- ScoreQuadraticWeightedKappa(pred, y.valid.fold, 1, 8)
+                return(-err)
+            }
+            optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
+            optCuts
+            
+            cuts <- c(min(pred.valid.fold), optCuts$par, max(pred.valid.fold))
+            score <- ScoreQuadraticWeightedKappa(y.valid.fold, as.integer(cut2(pred.valid.fold, cuts)))
+            score.folds <- score.folds + score / 3
+        }
+        vec.n <- c(vec.n, n)
+        vec.m <- c(vec.m, m)
+        vec.score <- c(vec.score, score.folds)
+        print(paste("-----------m = ", m, "; n = ", n, "; score =", score.folds))
+    }
+}
+dt.result <- data.table(booster = vec.m, params = vec.n, score = vec.score)
+#    booster params     score
+# 1:       1      1 0.6520153
+# 2:       1      2 0.6554311 *
+# 3:       1      3 0.6524763
+# 4:       1      4 0.6504982
+# 5:       1      5 0.6488586
+# 6:       1      6 0.6407940
+# 7:       1      7 0.6121644
+# 8:       2      1 0.6051335
+# 9:       2      2 0.6118097
+# 10:       2      3 0.6134282
+# 11:       2      4 0.6112849
+# 12:       2      5 0.6119529
+# 13:       2      6 0.6102465
+# 14:       2      7 0.6138835
+# m == 1; n == 2 produced the bset result
+# reproduce it
+m <- 1; n <- 2
+set.seed(m * 8 + n * 64 + k * 512)
+md.xgb <- xgb.train(data = dmx.train
+                    , booster = cv.booster[m]
+                    , objective = "reg:linear"
+                    , params = list(nthread = 8
+                                    , eta = cv.eta[n]
+                                    , min_child_weight = cv.min_child_weight[n]
+                                    , max_depth = cv.max_depth[n]
+                                    , subsample = cv.subsample[n]
+                                    , colsample_bytree = cv.colsample_bytree[n]
+                                    , metrics = "rmse"
+                    )
+                    # , feval = QuadraticWeightedKappa
+                    , early.stop.round = 20
+                    , maximize = F
+                    , print.every.n = cv.print.every.n[n]
+                    , nrounds = cv.nroudns[n]
+                    , watchlist = list(valid = dmx.valid.fold, train = dmx.train.fold)
+                    , verbose = T
+)
+pred.train <- predict(md.xgb, dmx.train)
+SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
+    cuts <- c(min(pred.train), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train))
+    pred <- as.integer(cut2(pred.train, cuts))
+    err <- ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
     return(-err)
 }
-optCuts = optim(seq(1.5, 7.5, by = 1), SQWKfun)
+optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
 optCuts
-# $par
-# [1] 2.782926 4.071472 3.490766 4.830848 5.581213 6.645683 6.074274
-# 
-# $value
-# [1] -0.6322359
-# 
-# $counts
-# function gradient 
-# 292       NA 
-# 
-# $convergence
-# [1] 0
-# 
-# $message
-# NULL
 
-# training QW Kappa
-pred.train <- as.numeric(Hmisc::cut2(cv.xgb.out$pred, c(-Inf, optCuts$par, Inf)))
-ScoreQuadraticWeightedKappa(pred.train, y.train)
-# [1] 0.6322359
+cuts <- c(min(pred.train), optCuts$par, max(pred.train))
+score <- ScoreQuadraticWeightedKappa(y.train, as.integer(cut2(pred.train, cuts)))
 
-cat("train xgb\n")
-set.seed(1)
-pred.valid <- rep(0, length(y.valid))
-for (i in 1:1){
-    set.seed(i * 1024)
-    md.xgb.out <- xgb.train(data = dmx.train
-                            , booster = "gbtree"
-                            , objective = "reg:linear"
-                            , params = list(nthread = 8
-                                            , eta = .025
-                                            , max_depth = 16
-                                            , subsample = 1
-                                            , colsample_bytree = 1
-                            )
-                            , metricds = "rsme"
-                            , early.stop.round = 20
-                            , maximize = F
-                            , nrounds = 297
-                            # , nfold = 3
-                            , watchlist = list(train = dmx.train, valid = dmx.valid)
-                            , verbose = T
-                            # , prediction = T
-    )
-    pred.valid <- pred.valid + predict(md.xgb.out, x.valid)
-}
 
-ScoreQuadraticWeightedKappa(y.valid, round(pred.valid))
-# [1] 0.6148074
 
-cat("apply the optCuts\n")
-pred.valid <- as.numeric(Hmisc::cut2(pred.valid, c(-Inf, optCuts$par, Inf)))
-ScoreQuadraticWeightedKappa(pred.valid, y.valid)
-table(pred.valid)
-# 1    2    3    4    5    6    7    8 
-# 457  375  371  623  761  574  761 2015
 
-cat("submit")
-pred.test <- predict(md.xgb.out, x.test)
-pred.test <- as.integer(Hmisc::cut2(pred.test, c(-Inf, optCuts$par, Inf)))
-table(pred.test)
-# 1    2    3    4    5    6    7    8 
-# 1557 1197 1151 2114 2569 1992 2465 6720 
-dt.submit = data.table(Id = dt.test$Id)
-dt.submit[, Response := pred.test]
-write.csv(dt.submit, "submit/003_init_xgb_with_optim.csv", row.names = FALSE)
+
+
+
+
+
+
 
 

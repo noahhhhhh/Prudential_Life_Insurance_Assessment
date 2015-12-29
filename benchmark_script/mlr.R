@@ -82,12 +82,12 @@ predictLearner.regr.xgboost = function(.learner, .model, .newdata, ...) {
 #####################################
 
 ## Read Data
-# train = read.csv("data/data_raw/train.csv", header = TRUE)
-# test = read.csv("data/data_raw/test.csv", header = TRUE)
-# test$Response = 0
+train = read.csv("data/data_raw/train.csv", header = TRUE)
+test = read.csv("data/data_raw/test.csv", header = TRUE)
+test$Response = 0
 
-train <- dt.preprocessed.combine[isTest == 0, !c("isTest"), with = F]
-test <- dt.preprocessed.combine[isTest == 1, !c("isTest"), with = F]
+# train <- dt.preprocessed.combine[isTest == 0, !c("isTest"), with = F]
+# test <- dt.preprocessed.combine[isTest == 1, !c("isTest"), with = F]
 
 ## store Id column and remove it from the train and test data
 testId = test$Id
@@ -107,7 +107,7 @@ lrn = makeLearner("regr.xgboost")
 lrn$par.vals = list(
     #nthread             = 30,
     nrounds             = 100,
-    print.every.n       = 50,
+    # print.every.n       = 50,
     objective           = "reg:linear"
 )
 # missing values will be imputed by their median
@@ -167,10 +167,21 @@ cv = crossval(lrn, trainTask, iter = 3, measures = SQWK, show.info = TRUE)
 # [0]	train-rmse:4.246967
 # [50]	train-rmse:1.725553
 # [Resample] Result: SQWK.test.mean=0.551
+
 optCuts = optim(seq(1.5, 7.5, by = 1), SQWKfun, pred = cv$pred)
 optCuts
 # $par
 # [1] 1.571734 3.414594 4.144019 4.888056 5.537057 6.251994 6.834168
+
+# before
+preds <- as.integer(cut2(cv$pred$data$response, c(-Inf, seq(1.5, 7.5, by = 1), Inf)))
+ScoreQuadraticWeightedKappa(preds, cv$pred$data$truth)
+# [1] 0.6023737
+# after
+preds <- as.integer(cut2(cv$pred$data$response, c(-Inf, optCuts$par, Inf)))
+ScoreQuadraticWeightedKappa(preds, cv$pred$data$truth)
+# [1] 0.6386675
+
 ## now train the model on all training data
 tr = train(lrn, trainTask)
 # 001_mlr_xgb_sample_code

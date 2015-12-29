@@ -36,6 +36,8 @@ dt.imputed.combine[, Product_Info_2_1 := ifelse(grepl("1", dt.imputed.combine$Pr
 # now start handling the no. of levels > 3
 # dt.imputed.combine <- BinaryEncode(dt.imputed.combine, colNominal.needBinEnc)
 dt.imputed.combine <- ConvertNonNumFactorToNumFactor(dt.imputed.combine, "Product_Info_2")
+# remove Product_Info_2
+dt.imputed.combine[, Product_Info_2 := NULL]
 # add to colNominal
 colNominal.newBinEnc <- as.character()
 # binary encoded cols
