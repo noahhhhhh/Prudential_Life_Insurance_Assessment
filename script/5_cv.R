@@ -172,6 +172,17 @@ dt.result
 ################################
 ## 1.3 train a xgb #############
 ################################
+load("data/data_meta/dt_train_valid_test_with_rf_meta.RData")
+x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
+y.train <- dt.train$Response
+dmx.train <- xgb.DMatrix(data =  x.train, label = y.train)
+
+x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[, -1]
+y.valid <- dt.valid$Response
+dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
+
+x.test <- model.matrix(~., dt.test[, !c("Id", "isTest", "Response"), with = F])[, -1]
+
 # m == 1; n == 2 produced the bset result
 # reproduce it
 cat("cross validate xgb\n")
@@ -399,6 +410,7 @@ stopCluster(cl)
 
 pred.rf.train <- predict(md.rf, newdata = x.train)
 pred.rf.valid <- predict(md.rf, newdata = x.valid)
+pred.rf.test <- predict(md.rf, newdata = x.test)
 
 ScoreQuadraticWeightedKappa(y.train, as.integer(cut2(pred.rf.train, c(-Inf, seq(1.5, 7.5, by = 1), Inf))))
 # [1] 0.5467729
@@ -425,12 +437,62 @@ pred.valid.op <- as.integer(cut2(pred.rf.valid, cuts.valid))
 ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)
 # [1] 0.620452
 
+# predict test
+cuts.test <- c(min(pred.rf.test), optCuts$par, max(pred.rf.test))
+pred.test.op <- as.integer(cut2(pred.rf.test, cuts.test))
+
+# adding a meta feature
+dt.train[, rf_meta := pred.train.op]
+dt.valid[, rf_meta := pred.valid.op]
+dt.test[, rf_meta := pred.test.op]
+save(dt.train, dt.valid, dt.test, file = "data/data_meta/dt_train_valid_test_with_rf_meta.RData") # getting worse
+
+############################################################################################
+## 3.0 random forest #######################################################################
+############################################################################################
+################################
+## 3.1 train, valid, and test ##
+################################
+cat("prepare train, valid, and test data set\n")
+set.seed(888)
+ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F)
+dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
+dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
+dt.test <- dt.preprocessed.combine[isTest == 1]
+dim(dt.train); dim(dt.valid); dim(dt.test)
+
+################################
+## 3.2 train a model ###########
+################################
+md.pr <- glm(Response ~., family = "gaussian", data = dt.train[, !c("Id", "isTest"), with = F])
+pred.pr.train <- predict(md.pr, dt.train)
+pred.pr.valid <- predict(md.pr, dt.valid)
+
+ScoreQuadraticWeightedKappa(y.train, as.integer(cut2(pred.pr.train, c(-Inf, seq(1.5, 7.5, by = 1), Inf))))
+# 0.6671775
 
 
+# optimise the cuts on pred.train
+SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
+    cuts <- c(-Inf, x[1], x[2], x[3], x[4], x[5], x[6], x[7], Inf)
+    pred <- as.integer(cut2(pred.pr.train, cuts))
+    err <- ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
+    return(-err)
+}
+optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
+optCuts
 
+# QWK score of the train
+cuts.train <- c(min(pred.pr.train), optCuts$par, max(pred.pr.train))
+pred.train.op <- as.integer(cut2(pred.pr.train, cuts.train))
+ScoreQuadraticWeightedKappa(y.train, pred.train.op)
+# [1] 0.7108755
 
-
-
+# QWK score of the valid
+cuts.valid <- c(min(pred.pr.valid), optCuts$par, max(pred.pr.valid))
+pred.valid.op <- as.integer(cut2(pred.pr.valid, cuts.valid))
+ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)
+# [1] 0.6376342
 
 
 
