@@ -1,6 +1,6 @@
 rm(list = ls()); gc();
 setwd("/Volumes/Data Science/Google Drive/data_science_competition/kaggle/Prudential_Life_Insurance_Assessment/")
-load("data/data_clean/dt_class_ified_combine.RData")
+load("data/data_enginee/dt_featureEngineed_combine.RData")
 require(data.table)
 require(caret)
 ############################################################################################
@@ -9,8 +9,8 @@ require(caret)
 # ##########################
 # ## 1.1 nzv and nearZero ##
 # ##########################
-# nzv.train <- nearZeroVar(dt.class.ified.combine[isTest == 0, !c("Id", "Response", "isTest"), with = F], saveMetrics = T)
-# nzv.test <- nearZeroVar(dt.class.ified.combine[isTest == 1,!c("Id", "Response", "isTest"), with = F], saveMetrics = T)
+# nzv.train <- nearZeroVar(dt.featureEngineed.combine[isTest == 0, !c("Id", "Response", "isTest"), with = F], saveMetrics = T)
+# nzv.test <- nearZeroVar(dt.featureEngineed.combine[isTest == 1,!c("Id", "Response", "isTest"), with = F], saveMetrics = T)
 # 
 # col.nzv.train <- rownames(nzv.train[nzv.train$nzv, ])
 # length(col.nzv.train)
@@ -24,8 +24,8 @@ require(caret)
 # # 143
 # 
 # # exclude them (version 1)
-# dt.class.ified.combine <- dt.class.ified.combine[, - col.nzv.train, with = F]
-# dim(dt.class.ified.combine)
+# dt.featureEngineed.combine <- dt.featureEngineed.combine[, - col.nzv.train, with = F]
+# dim(dt.featureEngineed.combine)
 # # [1] 79146   114
 # 
 # # select them (version 2)
@@ -35,7 +35,7 @@ require(caret)
 # ## 1.2 dummyVsars ##
 # ####################
 # # levels == 3
-# no.of.levels <- sapply(dt.class.ified.combine[, colNominal, with = F], function (x) {length(names(table(x)))})
+# no.of.levels <- sapply(dt.featureEngineed.combine[, colNominal, with = F], function (x) {length(names(table(x)))})
 # colnames.levels3 <- names(no.of.levels)[no.of.levels == 3]
 # colnames.levels3
 # # [1] "Product_Info_7"      "InsuredInfo_1"       "Insurance_History_2" "Insurance_History_3"
@@ -51,8 +51,8 @@ require(caret)
 # # [41] "Medical_History_40"  "Medical_History_41" 
 # 
 # formula.levels3 <- paste("~", paste(colnames.levels3, collapse = " + "))
-# dummies <- dummyVars(formula.levels3, dt.class.ified.combine)
-# dt.class_ified_level3 <- predict(dummies, newdata = dt.class.ified.combine)
+# dummies <- dummyVars(formula.levels3, dt.featureEngineed.combine)
+# dt.class_ified_level3 <- predict(dummies, newdata = dt.featureEngineed.combine)
 # dt.class_ified_level3 <- data.table(dt.class_ified_level3)
 # dt.class_ified_level3 <- dt.class_ified_level3[, lapply(.SD, as.factor)]
 # sapply(dt.class_ified_level3, class) # all factors
@@ -138,21 +138,21 @@ require(caret)
 # # [125] "Medical_History_41.2"  "Medical_History_41.3" 
 # setnames(dt.class_ified_level3, names(dt.class_ified_level3), colnames.class_ified_level3)
 # # combine
-# dt.class.ified.combine <- data.table(dt.class.ified.combine[, !colnames.levels3, with = F], dt.class_ified_level3)
+# dt.featureEngineed.combine <- data.table(dt.featureEngineed.combine[, !colnames.levels3, with = F], dt.class_ified_level3)
 
 ##########################
 ## 1.3 centre and scale ##
 ##########################
-prep.class.ified.combine <- preProcess(dt.class.ified.combine[, !c("Id", "Response", "isTest"), with = F]
+prep.class.ified.combine <- preProcess(dt.featureEngineed.combine[, !c("Id", "Response", "isTest"), with = F]
                                        # , method = c("range")
                                        , method = c("center", "scale")
                                        , verbose = T)
-dt.class.ified.combine <- predict(prep.class.ified.combine, dt.class.ified.combine)
+dt.featureEngineed.combine <- predict(prep.class.ified.combine, dt.featureEngineed.combine)
 
 ############################################################################################
 ## 2.0 save ################################################################################
 ############################################################################################
-dt.preprocessed.combine <- dt.class.ified.combine
+dt.preprocessed.combine <- dt.featureEngineed.combine
 save(dt.preprocessed.combine, file = "data/data_preprocess/dt_proprocess_combine.RData")
 
 

@@ -50,8 +50,6 @@ cv.print.every.n <- c(250, 150, 100, 75, 50, 40, 30)
 # 3: individuals
 cv.min_child_weight <- c(10, 20, 30, 40, 50, 60, 70)
 cv.max_depth <- rep(5, 6, 7, 8, 9, 10, 11)
-cv.subsample <- c(.9, .8, .7, .6, .5, .4, .3)
-cv.colsample_bytree <- c(.9, .8, .7, .6, .5, .4, .3)
 cv.gamma <- c(0, .1, .2, .3, .4, .5, .6)
 
 # set up vecor m
@@ -62,10 +60,6 @@ vec.n <- as.numeric()
 vec.n.min_child_weight <- as.numeric()
 # set up vector n.max_depth
 vec.n.max_depth <- as.numeric()
-# set up vector n.subsample
-vec.n.subsample <- as.numeric()
-# set up vector n.colsample_bytree
-vec.n.colsample_bytree <- as.numeric()
 # set up vector n.gamma
 vec.n.gamma <- as.numeric()
 
@@ -79,78 +73,74 @@ for(m in 1:2){ # boosters
     for(n in 1:7){ # eta; nrounds; print.every.n
         for(n.min_child_weight in 1:7){ # min_child_weight
             for(n.max_depth in 1:7){ # max_depth
-                for(n.subsample in 1:7){ # subsample
-                    for(n.colsample_bytree in 1:7){ # colsample_bytree
-                        for(n.gamma in 1:7){
-                            # set up a score metric for folds
-                            score.folds <- 0
-                            for(k in 1:3){ # folds
-                                set.seed(m * 8 + n * 64 + k * 512)
-                                # dmx.train.fold
-                                dt.train.fold <- dt.train[folds != k]
-                                x.train.fold <- model.matrix(Response ~., dt.train.fold[, !c("Id", "isTest"), with = F])[, -1]
-                                y.train.fold <- dt.train.fold$Response
-                                dmx.train.fold <- xgb.DMatrix(data =  x.train.fold, label = y.train.fold)
-                                # dmx.valid.fold
-                                dt.valid.fold <- dt.train[folds == k]
-                                x.valid.fold <- model.matrix(Response ~., dt.valid.fold[, !c("Id", "isTest"), with = F])[, -1]
-                                y.valid.fold <- dt.valid.fold$Response
-                                dmx.valid.fold <- xgb.DMatrix(data =  x.valid.fold, label = y.valid.fold)
-                                # train
-                                set.seed(m * 8 + n * 64 + k * 512)
-                                cv.xgb.out <- xgb.train(data = dmx.train.fold
-                                                        , booster = cv.booster[m]
-                                                        , objective = "count:poisson"
-                                                        , params = list(nthread = 8
-                                                                        , eta = cv.eta[n]
-                                                                        , min_child_weight = cv.min_child_weight[n.min_child_weight]
-                                                                        , max_depth = cv.max_depth[n.max_depth]
-                                                                        , subsample = cv.subsample[n.subsample]
-                                                                        , colsample_bytree = cv.colsample_bytree[n.colsample_bytree]
-                                                                        , gamma = cv.gamma[n.gamma]
-                                                                        , metrics = "rmse"
-                                                        )
-                                                        # , feval = QuadraticWeightedKappa
-                                                        , early.stop.round = 20
-                                                        , maximize = F
-                                                        , print.every.n = cv.print.every.n[n]
-                                                        , nrounds = cv.nrounds[n]
-                                                        , watchlist = list(valid = dmx.valid.fold, train = dmx.train.fold)
-                                                        , verbose = T
-                                )
-                                pred.valid.fold <- predict(cv.xgb.out, dmx.valid.fold)
-                                SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
-                                    cuts <- c(min(pred.valid.fold), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.valid.fold))
-                                    pred <- as.numeric(cut2(pred.valid.fold, cuts))
-                                    err <- ScoreQuadraticWeightedKappa(pred, y.valid.fold, 1, 8)
-                                    return(-err)
-                                }
-                                optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
-                                optCuts
-                                
-                                cuts <- c(min(pred.valid.fold), optCuts$par, max(pred.valid.fold))
-                                score <- ScoreQuadraticWeightedKappa(y.valid.fold, as.integer(cut2(pred.valid.fold, cuts)))
-                                score.folds <- score.folds + score / 3
-                            }
-                            
-                            vec.m <- c(vec.m, m)
-                            vec.n <- c(vec.n, n)
-                            vec.n.min_child_weight <- c(vec.n.min_child_weight, n.min_child_weight)
-                            vec.n.max_depth <- c(vec.n.max_depth, n.max_depth)
-                            vec.n.subsample <- c(vec.n.subsample, n.subsample)
-                            vec.n.colsample_bytree <- c(vec.n.colsample_bytree, n.colsample_bytree)
-                            vec.n.gamma <- c(vec.n.gamma, n.gamma)
-                            vec.score <- c(vec.score, score.folds)
-                            print(paste("-----------m = ", m
-                                        , "; n = ", n
-                                        , "; n.min_child_weight = ", n.min_child_weight
-                                        , "; n.max_depth = ", n.max_depth
-                                        , "; n.subsample = ", n.subsample
-                                        , "; n.colsample_bytree = ", n.colsample_bytree
-                                        , "; n.gamma = ", n.gamma
-                                        , "; score =", score.folds))
+                for(n.gamma in 1:7){
+                    # set up a score metric for folds
+                    score.folds <- 0
+                    for(k in 1:3){ # folds
+                        set.seed(m * 8 + n * 64 + k * 512)
+                        # dmx.train.fold
+                        dt.train.fold <- dt.train[folds != k]
+                        x.train.fold <- model.matrix(Response ~., dt.train.fold[, !c("Id", "isTest"), with = F])[, -1]
+                        y.train.fold <- dt.train.fold$Response
+                        dmx.train.fold <- xgb.DMatrix(data =  x.train.fold, label = y.train.fold)
+                        # dmx.valid.fold
+                        dt.valid.fold <- dt.train[folds == k]
+                        x.valid.fold <- model.matrix(Response ~., dt.valid.fold[, !c("Id", "isTest"), with = F])[, -1]
+                        y.valid.fold <- dt.valid.fold$Response
+                        dmx.valid.fold <- xgb.DMatrix(data =  x.valid.fold, label = y.valid.fold)
+                        # train
+                        set.seed(m * 8 + n * 64 + k * 512)
+                        cv.xgb.out <- xgb.train(data = dmx.train.fold
+                                                , booster = cv.booster[m]
+                                                , objective = "count:poisson"
+                                                , params = list(nthread = 8
+                                                                , eta = cv.eta[n]
+                                                                , min_child_weight = cv.min_child_weight[n.min_child_weight]
+                                                                , max_depth = cv.max_depth[n.max_depth]
+                                                                , subsample = cv.subsample[n.subsample]
+                                                                , colsample_bytree = cv.colsample_bytree[n.colsample_bytree]
+                                                                , gamma = cv.gamma[n.gamma]
+                                                                , metrics = "rmse"
+                                                )
+                                                # , feval = QuadraticWeightedKappa
+                                                , early.stop.round = 20
+                                                , maximize = F
+                                                , print.every.n = cv.print.every.n[n]
+                                                , nrounds = cv.nrounds[n]
+                                                , watchlist = list(valid = dmx.valid.fold, train = dmx.train.fold)
+                                                , verbose = T
+                        )
+                        pred.valid.fold <- predict(cv.xgb.out, dmx.valid.fold)
+                        SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
+                            cuts <- c(min(pred.valid.fold), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.valid.fold))
+                            pred <- as.numeric(cut2(pred.valid.fold, cuts))
+                            err <- ScoreQuadraticWeightedKappa(pred, y.valid.fold, 1, 8)
+                            return(-err)
                         }
+                        optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
+                        optCuts
+                        
+                        cuts <- c(min(pred.valid.fold), optCuts$par, max(pred.valid.fold))
+                        score <- ScoreQuadraticWeightedKappa(y.valid.fold, as.integer(cut2(pred.valid.fold, cuts)))
+                        score.folds <- score.folds + score / 3
                     }
+                    
+                    vec.m <- c(vec.m, m)
+                    vec.n <- c(vec.n, n)
+                    vec.n.min_child_weight <- c(vec.n.min_child_weight, n.min_child_weight)
+                    vec.n.max_depth <- c(vec.n.max_depth, n.max_depth)
+                    vec.n.subsample <- c(vec.n.subsample, n.subsample)
+                    vec.n.colsample_bytree <- c(vec.n.colsample_bytree, n.colsample_bytree)
+                    vec.n.gamma <- c(vec.n.gamma, n.gamma)
+                    vec.score <- c(vec.score, score.folds)
+                    print(paste("-----------m = ", m
+                                , "; n = ", n
+                                , "; n.min_child_weight = ", n.min_child_weight
+                                , "; n.max_depth = ", n.max_depth
+                                , "; n.subsample = ", n.subsample
+                                , "; n.colsample_bytree = ", n.colsample_bytree
+                                , "; n.gamma = ", n.gamma
+                                , "; score =", score.folds))
                 }
             }
         }
@@ -160,8 +150,6 @@ dt.result <- data.table(booster = vec.m
                         , eta = vec.n
                         , min_child_weight = vec.n.min_child_weight
                         , max_depth = vec.n.max_depth
-                        , subsample = vec.n.subsample
-                        , colsample_bytree = vec.n.colsample_bytree
                         , gamma = vec.n.gamma
                         , score = vec.score)
 dt.result
@@ -180,6 +168,7 @@ dt.result
 # 12:       2      5 0.6106793
 # 13:       2      6 0.6111796
 # 14:       2      7 0.6110618
+
 ################################
 ## 1.3 train a xgb #############
 ################################
@@ -314,18 +303,14 @@ pred.test.final <- apply(dt.pred.test, 1, function(x) median(x))
 pred.valid.final.op <- apply(dt.pred.valid.op, 1, function(x) median(x))
 pred.test.final.op <- apply(dt.pred.test.op, 1, function(x) median(x))
 
-cat("median combine the opCuts")
-opCuts.final <- apply(dt.optCuts, 1, function(x) median(x))
-
-cat("apply opCuts on pred.valid.final")
-cuts.valid.final <- c(min(pred.valid.final), opCuts.final, max(pred.valid.final))
-pred.valid.final.op <- as.integer(pred.valid.final, opCuts.final)
-
 cat("check the score")
-score <- ScoreQuadraticWeightedKappa(y.valid, round(pred.valid.final.op))
+score <- ScoreQuadraticWeightedKappa(y.valid, pred.valid.final.op)
 score
 # highest SQW score!
-# [1] 0.6601923
+# [1] 0.6601923 * this is highest, .8
+# [1] 0.5906142 apply + median + opCuts.final
+# [1] 0.6602611 col sample .6 with loop = 15 - overfitted (0.66785)
+# [1] 0.6620329 adding age, wt, ht, BMI group - overfitted (0.66587)
 
 
 ## create submission file with poisson
@@ -346,9 +331,21 @@ table(submission$Response)
 # 1714  935 1504 1694 2258 2672 3333 5655
 write.csv(submission, "submit/008_xgb_poisson_with_mult_sample_with_rounding_ensemble.csv", row.names = FALSE) # 0.66819 *
 
+## create submission file with col sample = .6, with s = 15, with median combine
+submission = data.table(Id = dt.test$Id)
+submission$Response = round(pred.test.final.op)
+table(submission$Response)
+# 1    2    3    4    5    6    7    8 
+# 1705  881 1625 1570 2437 2563 3380 5604 
+write.csv(submission, "submit/009_xgb_poisson_with_colsample_06_with_multi_loop_15_with_median_combine.csv", row.names = FALSE) # 0.66785
 
-
-
+## create submission file with 4 groups features, with s = 15, with median combine
+submission = data.table(Id = dt.test$Id)
+submission$Response = round(pred.test.final.op)
+table(submission$Response)
+# 1    2    3    4    5    6    7    8 
+# 1656 1012 1512 1631 2361 2574 3271 5748 
+write.csv(submission, "submit/010_xgb_poisson_with_4_groups_with_multi_loop_15_with_median_combine.csv", row.names = FALSE) # 0.66587
 
 
 
