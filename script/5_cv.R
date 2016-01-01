@@ -347,5 +347,98 @@ table(submission$Response)
 # 1656 1012 1512 1631 2361 2574 3271 5748 
 write.csv(submission, "submit/010_xgb_poisson_with_4_groups_with_multi_loop_15_with_median_combine.csv", row.names = FALSE) # 0.66587
 
+############################################################################################
+## 2.0 random forest #######################################################################
+############################################################################################
+################################
+## 2.1 train, valid, and test ##
+################################
+require(xgboost)
+require(Ckmeans.1d.dp)
+cat("prepare train, valid, and test data set\n")
+set.seed(888)
+ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F)
+dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
+dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
+dt.test <- dt.preprocessed.combine[isTest == 1]
+dim(dt.train); dim(dt.valid); dim(dt.test)
+
+x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
+y.train <- dt.train$Response
+dmx.train <- xgb.DMatrix(data =  x.train, label = y.train)
+
+x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[, -1]
+y.valid <- dt.valid$Response
+dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
+
+x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
+
+################################
+## 2.2 train a model ###########
+################################
+require(doParallel)
+require(randomForest)
+cores <- detectCores()
+cl <- makeCluster(cores)
+registerDoParallel(cl)
+
+set.seed(1)
+md.rf <- foreach(ntree = rep(250, 8)
+                 , .combine = combine
+                 , .packages = "randomForest") %dopar% 
+    randomForest(x = x.train
+                 , y = y.train
+                 , ntree = ntree
+                 , mtry = floor(sqrt(ncol(x.train)))
+                 , replace = T
+                 , nodesize = 100
+                 , importance = T
+                 , keep.forest = T
+    )
+stopCluster(cl)
+
+pred.rf.train <- predict(md.rf, newdata = x.train)
+pred.rf.valid <- predict(md.rf, newdata = x.valid)
+
+ScoreQuadraticWeightedKappa(y.train, as.integer(cut2(pred.rf.train, c(-Inf, seq(1.5, 7.5, by = 1), Inf))))
+# [1] 0.5467729
+
+# optimise the cuts on pred.train
+SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
+    cuts <- c(-Inf, x[1], x[2], x[3], x[4], x[5], x[6], x[7], Inf)
+    pred <- as.integer(cut2(pred.rf.train, cuts))
+    err <- ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
+    return(-err)
+}
+optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
+optCuts
+
+# QWK score of the train
+cuts.train <- c(min(pred.rf.train), optCuts$par, max(pred.rf.train))
+pred.train.op <- as.integer(cut2(pred.rf.train, cuts.train))
+ScoreQuadraticWeightedKappa(y.train, pred.train.op)
+# [1] 0.6804625
+
+# QWK score of the valid
+cuts.valid <- c(min(pred.rf.valid), optCuts$par, max(pred.rf.valid))
+pred.valid.op <- as.integer(cut2(pred.rf.valid, cuts.valid))
+ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)
+# [1] 0.620452
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

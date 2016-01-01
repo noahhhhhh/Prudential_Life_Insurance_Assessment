@@ -8,8 +8,8 @@ require(data.table)
 # 5 groups
 dt.class.ified.combine[, Age_Group := as.factor(as.integer(cut2(dt.class.ified.combine$Ins_Age, cuts = c(0, .2, .4, .6, .8, 1))))]
 colNominal <- c(colNominal, "Age_Group")
-dt.class.ified.combine[, Ins_Age := NULL]
-colNominal <- colNominal[!colNominal %in% "Ins_Age"]
+# dt.class.ified.combine[, Ins_Age := NULL]
+# colNominal <- colNominal[!colNominal %in% "Ins_Age"]
 
 ############################################################################################
 ## 2.0 Ht_Group ############################################################################
@@ -17,8 +17,8 @@ colNominal <- colNominal[!colNominal %in% "Ins_Age"]
 # 5 groups
 dt.class.ified.combine[, Ht_Group := as.factor(as.integer(cut2(dt.class.ified.combine$Ht, cuts = c(0, .2, .4, .6, .8, 1))))]
 colNominal <- c(colNominal, "Ht_Group")
-dt.class.ified.combine[, Ht := NULL]
-colNominal <- colNominal[!colNominal %in% "Ht"]
+# dt.class.ified.combine[, Ht := NULL]
+# colNominal <- colNominal[!colNominal %in% "Ht"]
 
 ############################################################################################
 ## 3.0 Wt_Group ############################################################################
@@ -26,8 +26,8 @@ colNominal <- colNominal[!colNominal %in% "Ht"]
 # 5 groups
 dt.class.ified.combine[, Wt_Group := as.factor(as.integer(cut2(dt.class.ified.combine$Wt, cuts = c(0, .2, .4, .6, .8, 1))))]
 colNominal <- c(colNominal, "Wt_Group")
-dt.class.ified.combine[, Wt := NULL]
-colNominal <- colNominal[!colNominal %in% "Wt"]
+# dt.class.ified.combine[, Wt := NULL]
+# colNominal <- colNominal[!colNominal %in% "Wt"]
 
 ############################################################################################
 ## 4.0 BMI_Group ############################################################################
@@ -35,8 +35,8 @@ colNominal <- colNominal[!colNominal %in% "Wt"]
 # 5 groups
 dt.class.ified.combine[, BMI_Group := as.factor(as.integer(cut2(dt.class.ified.combine$BMI, cuts = c(0, .2, .4, .6, .8, 1))))]
 colNominal <- c(colNominal, "BMI_Group")
-dt.class.ified.combine[, BMI := NULL]
-colNominal <- colNominal[!colNominal %in% "BMI"]
+# dt.class.ified.combine[, BMI := NULL]
+# colNominal <- colNominal[!colNominal %in% "BMI"]
 
 ############################################################################################
 ## 6.0 save ################################################################################
