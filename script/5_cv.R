@@ -41,19 +41,15 @@ set.seed(888)
 folds <- createFolds(dt.train$Response, k = 3, list = F)
 
 cat("set the parameters\n")
-# 1: m
-cv.booster <- c("gbtree", "gblinear")
-# 2: n
+
 cv.eta <- c(.001, .025, .05)
-cv.nrounds <- c(12000, 8000, 6000)
+cv.nrounds <- c(18000, 15000, 12000)
 cv.print.every.n <- c(250, 150, 100)
-# 3: n
+
 cv.min_child_weight <- c(10, 20, 30)
 cv.max_depth <- c(6, 7, 8)
 cv.gamma <- c(.1, .5, .8)
 
-# set up vecor m
-vec.m <- as.numeric()
 # set up vector n
 vec.n <- as.numeric()
 # set up vector n.min_child_weight
@@ -124,12 +120,9 @@ for(n in 1:3){ # eta; nrounds; print.every.n
                     score.folds <- score.folds + score / 3
                 }
                 
-                vec.m <- c(vec.m, m)
                 vec.n <- c(vec.n, n)
                 vec.n.min_child_weight <- c(vec.n.min_child_weight, n.min_child_weight)
                 vec.n.max_depth <- c(vec.n.max_depth, n.max_depth)
-                vec.n.subsample <- c(vec.n.subsample, n.subsample)
-                vec.n.colsample_bytree <- c(vec.n.colsample_bytree, n.colsample_bytree)
                 vec.n.gamma <- c(vec.n.gamma, n.gamma)
                 vec.score <- c(vec.score, score.folds)
                 print(paste("----------- n = ", n
