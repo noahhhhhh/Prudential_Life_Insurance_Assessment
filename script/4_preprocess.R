@@ -6,27 +6,27 @@ require(caret)
 ############################################################################################
 ## 1.0 preprocess ##########################################################################
 ############################################################################################
-##########################
-## 1.1 nzv and nearZero ##
-##########################
-nzv.train <- nearZeroVar(dt.featureEngineed.combine[isTest == 0, !c("Id", "Response", "isTest"), with = F], saveMetrics = T)
-nzv.test <- nearZeroVar(dt.featureEngineed.combine[isTest == 1,!c("Id", "Response", "isTest"), with = F], saveMetrics = T)
-
-col.nzv.train <- rownames(nzv.train[nzv.train$nzv, ])
-length(col.nzv.train)
-# [1] 73
-# col.nzv.test <- rownames(nzv.test[nzv.test$nzv, ])
-# length(col.nzv.test)
-# [1] 70
-
-# col.nzv <- union(col.nzv.test, col.nzv.train)
-# length(col.nzv)
-# 143
-
-# exclude them (version 1)
-dt.featureEngineed.combine <- dt.featureEngineed.combine[, - col.nzv.train, with = F]
-dim(dt.featureEngineed.combine)
-# [1] 79146   114
+#########################
+# 1.1 nzv and nearZero ##
+#########################
+# nzv.train <- nearZeroVar(dt.featureEngineed.combine[isTest == 0, !c("Id", "Response", "isTest"), with = F], saveMetrics = T)
+# nzv.test <- nearZeroVar(dt.featureEngineed.combine[isTest == 1,!c("Id", "Response", "isTest"), with = F], saveMetrics = T)
+# 
+# col.nzv.train <- rownames(nzv.train[nzv.train$nzv, ])
+# length(col.nzv.train)
+# # [1] 73
+# # col.nzv.test <- rownames(nzv.test[nzv.test$nzv, ])
+# # length(col.nzv.test)
+# # [1] 70
+# 
+# # col.nzv <- union(col.nzv.test, col.nzv.train)
+# # length(col.nzv)
+# # 143
+# 
+# # exclude them (version 1)
+# dt.featureEngineed.combine <- dt.featureEngineed.combine[, - col.nzv.train, with = F]
+# dim(dt.featureEngineed.combine)
+# # [1] 79146   114
 
 # select them (version 2)
 # NX: to be continued

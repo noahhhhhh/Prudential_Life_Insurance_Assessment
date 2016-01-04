@@ -16,9 +16,13 @@ require(xgboost)
 require(Ckmeans.1d.dp)
 cat("prepare train, valid, and test data set\n")
 set.seed(888)
-ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F)
+ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .66, list = F)
 dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
 dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
+set.seed(888)
+ind.valid <- createDataPartition(dt.valid$Response, p = .5, list = F)
+dt.valid1 <- dt.valid[ind.valid]
+dt.valid2 <- dt.valid[-ind.valid]
 dt.test <- dt.preprocessed.combine[isTest == 1]
 dim(dt.train); dim(dt.valid); dim(dt.test)
 
