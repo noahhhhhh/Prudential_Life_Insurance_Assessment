@@ -14,7 +14,7 @@ require(Hmisc)
 ################################
 require(xgboost)
 require(Ckmeans.1d.dp)
-cat("prepare train, valid, and test data set\n")
+cat("prepare train, valid, and test data set...\n")
 set.seed(888)
 ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .66, list = F)
 dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
@@ -34,23 +34,31 @@ x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[,
 y.valid <- dt.valid$Response
 dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
 
+x.valid1 <- model.matrix(Response ~., dt.valid1[, !c("Id", "isTest"), with = F])[, -1]
+y.valid1 <- dt.valid1$Response
+dmx.valid1 <- xgb.DMatrix(data =  x.valid1, label = y.valid1)
+
+x.valid2 <- model.matrix(Response ~., dt.valid2[, !c("Id", "isTest"), with = F])[, -1]
+y.valid2 <- dt.valid2$Response
+dmx.valid2 <- xgb.DMatrix(data =  x.valid2, label = y.valid2)
+
 x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
 
 ################################
 ## 1.2 train ###################
 ################################
-cat("create a 3-folds\n")
+cat("create a 3-folds...\n")
 set.seed(888)
 # create a 3 folds
 folds <- createFolds(dt.train$Response, k = 3, list = F)
 
-cat("reproduce from cv\n")
+cat("reproduce from cv...\n")
 n <- 2
 n.min_child_weight <- 3
 n.max_depth <- 3
 n.gamma <- 3
 
-cat("init some variables\n")
+cat("init some variables...\n")
 ls.pred.train <- list()
 ls.pred.valid <- list()
 ls.pred.test <- list()
@@ -84,9 +92,9 @@ for(s in 1:15){
                                 , objective = "count:poisson"
                                 , params = list(nthread = 8
                                                 , eta = .025
-                                                , min_child_weight = 30
+                                                , min_child_weight = 20 # 30 is cv best
                                                 , max_depth = 8
-                                                , subsample = 1
+                                                , subsample = .8
                                                 , colsample_bytree = .8
                                                 , gamma = .8
                                                 , metrics = "rmse"
@@ -114,7 +122,6 @@ for(s in 1:15){
         cuts <- c(min(pred.valid.fold.temp), optCuts$par, max(pred.valid.fold.temp))
         score <- ScoreQuadraticWeightedKappa(y.valid.fold, as.integer(cut2(pred.valid.fold.temp, cuts)))
         print(paste("------- loop:", s, "; k:", k, "; score:", score))
-        cat("\n")
         
         pred.train <- pred.train + predict(cv.xgb.out, dmx.train)
         pred.valid <- pred.valid + predict(cv.xgb.out, dmx.valid)
@@ -124,7 +131,7 @@ for(s in 1:15){
     pred.valid <- pred.valid / 3
     pred.test <- pred.test / 3
     
-    cat("optimise the cuts on pred.train\n")
+    cat("optimise the cuts on pred.train...\n")
     SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
         cuts <- c(min(pred.train), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train))
         pred <- as.integer(cut2(pred.train, cuts))
@@ -134,12 +141,12 @@ for(s in 1:15){
     optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
     optCuts
     
-    cat("predict the valid\n")
+    cat("predict the valid...\n")
     cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
     pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
     print(paste("loop", s, ": score -", ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)))
     
-    cat("predict the test\n")
+    cat("predict the test...\n")
     cuts.test <- c(min(pred.test), optCuts$par, max(pred.test))
     pred.test.op <- as.integer(cut2(pred.test, cuts.test))
     
@@ -183,7 +190,8 @@ pred.test.final.op <- apply(dt.pred.test.op, 1, function(x) median(x))
 cat("check the valid score")
 score <- ScoreQuadraticWeightedKappa(y.valid, pred.valid.final.op)
 score
-# [1] 0.6605907
+# [1] 0.6605907 with all features (LB 0.66705)
+# with no 4 group features
 
 ################################
 ## 1.3 submit ##################

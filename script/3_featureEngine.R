@@ -15,7 +15,7 @@ colNominal <- c(colNominal, "Age_Group")
 ## 2.0 Ht_Group ############################################################################
 ############################################################################################
 # 5 groups
-dt.class.ified.combine[, Ht_Group := as.factor(as.integer(cut2(dt.class.ified.combine$Ht, cuts = c(.4, .6, .8, 1))))]
+dt.class.ified.combine[, Ht_Group := as.factor(as.integer(cut2(dt.class.ified.combine$Ht, cuts = c(.6, .8, 1))))]
 colNominal <- c(colNominal, "Ht_Group")
 # dt.class.ified.combine[, Ht := NULL]
 # colNominal <- colNominal[!colNominal %in% "Ht"]
