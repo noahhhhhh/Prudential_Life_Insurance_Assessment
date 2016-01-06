@@ -89,47 +89,63 @@ dt.train.rf <- dt.train[, !c("Id", "isTest"), with = F]
 # mtry <- round(sqrt(dim(dt.train.rf)[2]))
 mtry <- ceiling(dim(dt.train.rf)[2] / 3)
 
-set.seed(888)
-md.rf <- ranger(Response ~.
-                , data = dt.train.rf
-                , num.trees = 5000
-                , mtry = mtry
-                , importance = "impurity"
-                , write.forest = T
-                , min.node.size = 20
-                , num.threads = 8
-                , verbose = T
-                )
+score.cv <- as.numeric()
+vec.n.trees <- as.numeric()
+vec.n.mtry <- as.numeric()
 
-pred.train <- predict(md.rf, dt.train)
-pred.train <- predictions(pred.train)
-# pred.train <- as.integer(pred.train)
-
-pred.valid <- predict(md.rf, dt.valid)
-pred.valid <- predictions(pred.valid)
-# pred.valid <- as.integer(pred.valid)
-
-pred.test <- predict(md.rf, dt.test)
-pred.test <- predictions(pred.test)
-# pred.test <- as.integer(pred.test)
-
-cat("optimising the cuts on pred.train ...\n")
-SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
-    cuts <- c(min(pred.train), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train))
-    pred <- as.integer(cut2(pred.train, cuts))
-    err <- ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
-    return(-err)
+for (n.trees in seq(500, 5500, by = 1000)){
+    for (n.mtry in seq(12, 120, by = 24)){
+        set.seed(888)
+        md.rf <- ranger(Response ~.
+                        , data = dt.train.rf
+                        , num.trees = n.trees
+                        , mtry = n.mtry
+                        , importance = "impurity"
+                        , write.forest = T
+                        , min.node.size = 20
+                        , num.threads = 8
+                        , verbose = T
+        )
+        
+        pred.train <- predict(md.rf, dt.train)
+        pred.train <- predictions(pred.train)
+        # pred.train <- as.integer(pred.train)
+        
+        pred.valid <- predict(md.rf, dt.valid)
+        pred.valid <- predictions(pred.valid)
+        # pred.valid <- as.integer(pred.valid)
+        
+        pred.test <- predict(md.rf, dt.test)
+        pred.test <- predictions(pred.test)
+        # pred.test <- as.integer(pred.test)
+        
+        cat("optimising the cuts on pred.train ...\n")
+        SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
+            cuts <- c(min(pred.train), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train))
+            pred <- as.integer(cut2(pred.train, cuts))
+            err <- ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
+            return(-err)
+        }
+        
+        optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
+        optCuts
+        
+        cat("applying optCuts on valid ...\n")
+        cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
+        pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
+        score <- ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)
+        # [1] 0.6265719 (originally .550676; num.trees = 500, regression tree on raw features)
+        # [1] 0.5286518 (originally .5286518; num.trees = 500, classification tree on raw features)
+        # [1] 0.6444031 (originally .5558768; num.trees = 5000, regression tree on raw features)
+        
+        print(paste("-------- n.trees:", n.trees, "; mtry:", n.mtry, "; score:", score))
+        
+        score.cv <- c(score.cv, score)
+        vec.n.trees <- c(vec.n.trees, n.trees)
+        vec.n.mtry <- c(vec.n.mtry, n.mtry)
+    }
 }
-
-optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
-optCuts
-
-cat("applying optCuts on valid ...\n")
-cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
-pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
-ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)
-# [1] 0.6265719 (originally .550676; num.trees = 500, regression tree)
-# [1] 0.5286518 (originally .5286518; num.trees = 500, classification tree)
+dt.result <- data.table(num.trees = vec.n.trees, mtry = vec.n.mtry, score = score.cv)
 
 cat("applying optCuts on test ...\n")
 cuts.test <- c(min(pred.test), optCuts$par, max(pred.test))
