@@ -181,6 +181,7 @@ opCuts.final <- apply(dt.optCuts, 1, function(x) median(x))
 cat("check the score")
 score <- ScoreQuadraticWeightedKappa(y.valid, round(pred.valid.final.op))
 score
+# 0.6601923
 
 ################################
 ## 1.3 submit ##################
@@ -191,16 +192,6 @@ table(submission$Response)
 # 1    2    3    4    5    6    7    8 
 # 1715  934 1504 1693 2259 2672 3333 5655
 write.csv(submission, "submit/011_xgb_poisson_recv_with_all_features.csv", row.names = FALSE) # 0.6601923 (highest) (LB 0.66819)
-
-submission$Response = round(dt.pred.test.op$V1) # try the loop with the highest valid score
-table(submission$Response)
-# 1    2    3    4    5    6    7    8 
-# 1411 1294 1390 1881 2242 2451 3706 5390 
-write.csv(submission, "submit/012_xgb_poisson_with_raw_featuers_by_best_valid_score.csv", row.names = FALSE) # 0.6601923 (highest) (LB 0.66775)
-
-
-
-
 
 
 

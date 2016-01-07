@@ -249,11 +249,15 @@ dt.result
 ################################
 require(xgboost)
 require(Ckmeans.1d.dp)
-cat("prepare train, valid, and test data set\n")
+cat("prepare train, valid, and test data set...\n")
 set.seed(888)
-ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F)
+ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F) # remember to change it to .66
 dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
 dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
+set.seed(888)
+ind.valid <- createDataPartition(dt.valid$Response, p = .5, list = F)
+dt.valid1 <- dt.valid[ind.valid]
+dt.valid2 <- dt.valid[-ind.valid]
 dt.test <- dt.preprocessed.combine[isTest == 1]
 dim(dt.train); dim(dt.valid); dim(dt.test)
 
@@ -265,117 +269,114 @@ x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[,
 y.valid <- dt.valid$Response
 dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
 
+x.valid1 <- model.matrix(Response ~., dt.valid1[, !c("Id", "isTest"), with = F])[, -1]
+y.valid1 <- dt.valid1$Response
+dmx.valid1 <- xgb.DMatrix(data =  x.valid1, label = y.valid1)
+
+x.valid2 <- model.matrix(Response ~., dt.valid2[, !c("Id", "isTest"), with = F])[, -1]
+y.valid2 <- dt.valid2$Response
+dmx.valid2 <- xgb.DMatrix(data =  x.valid2, label = y.valid2)
+
 x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
 
 ################################
-## 2.2 train a model ###########
+## 2.2 cv rf ###################
 ################################
-require(doParallel)
-require(randomForest)
-cores <- detectCores()
-cl <- makeCluster(cores)
-registerDoParallel(cl)
+require(ranger)
+dt.train.rf <- dt.train[, !c("Id", "isTest"), with = F]
+# dt.train.rf[, Response := as.factor(Response)]
+# mtry <- round(sqrt(dim(dt.train.rf)[2]))
+mtry <- ceiling(dim(dt.train.rf)[2] / 3)
 
-set.seed(1)
-md.rf <- foreach(ntree = rep(250, 8)
-                 , .combine = combine
-                 , .packages = "randomForest") %dopar% 
-    randomForest(x = x.train
-                 , y = y.train
-                 , ntree = ntree
-                 , mtry = floor(sqrt(ncol(x.train)))
-                 , replace = T
-                 , nodesize = 100
-                 , importance = T
-                 , keep.forest = T
-    )
-stopCluster(cl)
+score.cv <- as.numeric()
+vec.n.trees <- as.numeric()
+vec.n.mtry <- as.numeric()
 
-pred.rf.train <- predict(md.rf, newdata = x.train)
-pred.rf.valid <- predict(md.rf, newdata = x.valid)
-pred.rf.test <- predict(md.rf, newdata = x.test)
-
-ScoreQuadraticWeightedKappa(y.train, as.integer(cut2(pred.rf.train, c(-Inf, seq(1.5, 7.5, by = 1), Inf))))
-# [1] 0.5467729
-
-# optimise the cuts on pred.train
-SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
-    cuts <- c(-Inf, x[1], x[2], x[3], x[4], x[5], x[6], x[7], Inf)
-    pred <- as.integer(cut2(pred.rf.train, cuts))
-    err <- ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
-    return(-err)
+for (n.trees in seq(500, 5500, by = 1000)){
+    for (n.mtry in seq(12, 120, by = 24)){
+        set.seed(888)
+        md.rf <- ranger(Response ~.
+                        , data = dt.train.rf
+                        , num.trees = n.trees
+                        , mtry = n.mtry
+                        , importance = "impurity"
+                        , write.forest = T
+                        , min.node.size = 20
+                        , num.threads = 8
+                        , verbose = T
+        )
+        
+        pred.train <- predict(md.rf, dt.train)
+        pred.train <- predictions(pred.train)
+        # pred.train <- as.integer(pred.train)
+        
+        pred.valid <- predict(md.rf, dt.valid)
+        pred.valid <- predictions(pred.valid)
+        # pred.valid <- as.integer(pred.valid)
+        
+        pred.test <- predict(md.rf, dt.test)
+        pred.test <- predictions(pred.test)
+        # pred.test <- as.integer(pred.test)
+        
+        cat("optimising the cuts on pred.train ...\n")
+        SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
+            cuts <- c(min(pred.train), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train))
+            pred <- as.integer(cut2(pred.train, cuts))
+            err <- ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
+            return(-err)
+        }
+        
+        optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
+        optCuts
+        
+        cat("applying optCuts on valid ...\n")
+        cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
+        pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
+        score <- ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)
+        # [1] 0.6265719 (originally .550676; num.trees = 500, regression tree on raw features)
+        # [1] 0.5286518 (originally .5286518; num.trees = 500, classification tree on raw features)
+        # [1] 0.6444031 (originally .5558768; num.trees = 5000, regression tree on raw features)
+        
+        print(paste("-------- n.trees:", n.trees, "; mtry:", n.mtry, "; score:", score))
+        
+        score.cv <- c(score.cv, score)
+        vec.n.trees <- c(vec.n.trees, n.trees)
+        vec.n.mtry <- c(vec.n.mtry, n.mtry)
+    }
 }
-optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
-optCuts
-
-# QWK score of the train
-cuts.train <- c(min(pred.rf.train), optCuts$par, max(pred.rf.train))
-pred.train.op <- as.integer(cut2(pred.rf.train, cuts.train))
-ScoreQuadraticWeightedKappa(y.train, pred.train.op)
-# [1] 0.6804625
-
-# QWK score of the valid
-cuts.valid <- c(min(pred.rf.valid), optCuts$par, max(pred.rf.valid))
-pred.valid.op <- as.integer(cut2(pred.rf.valid, cuts.valid))
-ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)
-# [1] 0.620452
-
-# predict test
-cuts.test <- c(min(pred.rf.test), optCuts$par, max(pred.rf.test))
-pred.test.op <- as.integer(cut2(pred.rf.test, cuts.test))
-
-# adding a meta feature
-dt.train[, rf_meta := pred.train.op]
-dt.valid[, rf_meta := pred.valid.op]
-dt.test[, rf_meta := pred.test.op]
-save(dt.train, dt.valid, dt.test, file = "data/data_meta/dt_train_valid_test_with_rf_meta.RData") # getting worse
-
-############################################################################################
-## 3.0 random forest #######################################################################
-############################################################################################
-################################
-## 3.1 train, valid, and test ##
-################################
-cat("prepare train, valid, and test data set\n")
-set.seed(888)
-ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F)
-dt.train <- dt.preprocessed.combine[isTest == 0][ind.train][, !c("Id", "isTest"), with = F]
-dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train][, !c("Id", "isTest"), with = F]
-dt.test <- dt.preprocessed.combine[isTest == 1]
-dim(dt.train); dim(dt.valid); dim(dt.test)
-
-################################
-## 3.2 train a model ###########
-################################
-md.pr <- glm(Response ~., family = "gaussian", data = dt.train)
-pred.pr.train <- predict(md.pr, dt.train)
-pred.pr.valid <- predict(md.pr, dt.valid)
-
-ScoreQuadraticWeightedKappa(dt.train$Response, as.integer(cut2(pred.pr.train, c(-Inf, seq(1.5, 7.5, by = 1), Inf))))
-# 0.6671775
-
-
-# optimise the cuts on pred.train
-SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
-    cuts <- c(-Inf, x[1], x[2], x[3], x[4], x[5], x[6], x[7], Inf)
-    pred <- as.integer(cut2(pred.pr.train, cuts))
-    err <- ScoreQuadraticWeightedKappa(pred, dt.train$Response, 1, 8)
-    return(-err)
-}
-optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
-optCuts
-
-# QWK score of the train
-cuts.train <- c(min(pred.pr.train), optCuts$par, max(pred.pr.train))
-pred.train.op <- as.integer(cut2(pred.pr.train, cuts.train))
-ScoreQuadraticWeightedKappa(dt.train$Response, pred.train.op)
-# [1] 0.7108755
-
-# QWK score of the valid
-cuts.valid <- c(min(pred.pr.valid), optCuts$par, max(pred.pr.valid))
-pred.valid.op <- as.integer(cut2(pred.pr.valid, cuts.valid))
-ScoreQuadraticWeightedKappa(dt.valid$Response, pred.valid.op)
-# [1] 0.6376342
+dt.result <- data.table(num.trees = vec.n.trees, mtry = vec.n.mtry, score = score.cv)
+dt.result
+# num.trees mtry     score
+# 1:       500   12 0.6277843
+# 2:       500   36 0.6429618
+# 3:       500   60 0.6402890
+# 4:       500   84 0.6439057
+# 5:       500  108 0.6405881
+# 6:      1500   12 0.6300243
+# 7:      1500   36 0.6426614
+# 8:      1500   60 0.6429911
+# 9:      1500   84 0.6429398
+# 10:      1500  108 0.6435185
+# 11:      2500   12 0.6281866
+# 12:      2500   36 0.6424316
+# 13:      2500   60 0.6448425
+# 14:      2500   84 0.6429409
+# 15:      2500  108 0.6441859
+# 16:      3500   12 0.6293591
+# 17:      3500   36 0.6450072 *
+# 18:      3500   60 0.6443587
+# 19:      3500   84 0.6432712
+# 20:      3500  108 0.6429184
+# 21:      4500   12 0.6296491
+# 22:      4500   36 0.6445917
+# 23:      4500   60 0.6436474
+# 24:      4500   84 0.6441578
+# 25:      4500  108 0.6433275
+# 26:      5500   12 0.6295995
+# 27:      5500   36 0.6442807
+# 28:      5500   60 0.6438699
+# 29:      5500   84 0.6432383
+# 30:      5500  108 0.6437692
 
 
 
