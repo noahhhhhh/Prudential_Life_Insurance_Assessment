@@ -16,7 +16,8 @@ The results will help Prudential better understand the predictive power of the d
 4. [06/01/2016 - **Done**] try to only use optim within k (fold), not s (loop)
 5. [06/01/2016 - **Done**] try to apply optim on valid1 and use it to predict valid2 (remember to change the training set proportion to .66 from .9)
 6. [07/01/2016 - **Not Done Yet**] add some noise into it
-7. [07/01/2016 - **Not Done Yet**] tune rf
+7. [07/01/2016 - **Done**] tune rf
+8. [09/01/2016 - **Not Done Yet**] knn meta features (need dummy var / binary encode)
 
 ## LOG
 1. I did 3 kinds of imputations (...Impute_Median/Impute_Mean; ...Impute_2016/Impute_1; simply remove the feature)
