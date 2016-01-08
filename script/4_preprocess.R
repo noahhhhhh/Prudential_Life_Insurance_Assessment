@@ -6,9 +6,9 @@ require(caret)
 ############################################################################################
 ## 1.0 preprocess ##########################################################################
 ############################################################################################
-#########################
-# 1.1 nzv and nearZero ##
-#########################
+# ##########################
+# ## 1.1 nzv and nearZero ##
+# ##########################
 # nzv.train <- nearZeroVar(dt.featureEngineed.combine[isTest == 0, !c("Id", "Response", "isTest"), with = F], saveMetrics = T)
 # nzv.test <- nearZeroVar(dt.featureEngineed.combine[isTest == 1,!c("Id", "Response", "isTest"), with = F], saveMetrics = T)
 # 
@@ -27,9 +27,9 @@ require(caret)
 # dt.featureEngineed.combine <- dt.featureEngineed.combine[, - col.nzv.train, with = F]
 # dim(dt.featureEngineed.combine)
 # # [1] 79146   114
-
-# select them (version 2)
-# NX: to be continued
+# 
+# # select them (version 2)
+# # NX: to be continued
 
 # ####################
 # ## 1.2 dummyVsars ##
@@ -148,6 +148,22 @@ prep.class.ified.combine <- preProcess(dt.featureEngineed.combine[, !c("Id", "Re
                                        , method = c("center", "scale")
                                        , verbose = T)
 dt.featureEngineed.combine <- predict(prep.class.ified.combine, dt.featureEngineed.combine)
+
+###########################
+## 1.4 knn meta features ##
+##########################
+colnames <- names(dt.featureEngineed.combine)
+#####################
+## Employment_Info ##
+#####################
+str(dt.featureEngineed.combine[, colnames[grep("Employment_Info", colnames)], with = F])
+
+
+###############
+## 1.5 noise ##
+###############
+
+
 
 ############################################################################################
 ## 2.0 save ################################################################################

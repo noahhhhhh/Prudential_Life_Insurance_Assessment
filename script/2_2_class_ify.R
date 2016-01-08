@@ -34,17 +34,24 @@ dt.imputed.combine[, Product_Info_2_E := ifelse(grepl("E", dt.imputed.combine$Pr
 dt.imputed.combine[, Product_Info_2_1 := ifelse(grepl("1", dt.imputed.combine$Product_Info_2), 1, 0)]
 
 # now start handling the no. of levels > 3
-# dt.imputed.combine <- BinaryEncode(dt.imputed.combine, colNominal.needBinEnc)
 dt.imputed.combine <- ConvertNonNumFactorToNumFactor(dt.imputed.combine, "Product_Info_2")
+colNominal <- c(colNominal, "Product_Info_2_toNum")
+colNominal.needBinEnc <- c(colNominal.needBinEnc, "Product_Info_2_toNum")
+colNominal.needBinEnc <- colNominal.needBinEnc[colNominal.needBinEnc != "Product_Info_2"]
+
+dt.imputed.combine <- BinaryEncode(dt.imputed.combine, colNominal.needBinEnc)
+
 # remove Product_Info_2
 dt.imputed.combine[, Product_Info_2 := NULL]
+colNominal <- colNominal[colNominal != "Product_Info_2"]
+
 # add to colNominal
 colNominal.newBinEnc <- as.character()
 # binary encoded cols
-# for (col in colNominal.needBinEnc){
-#     col <- paste(col, "_bin", sep = "")
-#     colNominal.newBinEnc <- c(colNominal.newBinEnc, names(dt.imputed.combine)[grep(col, names(dt.imputed.combine))])
-# }
+for (col in colNominal.needBinEnc){
+    col <- paste(col, "_bin", sep = "")
+    colNominal.newBinEnc <- c(colNominal.newBinEnc, names(dt.imputed.combine)[grep(col, names(dt.imputed.combine))])
+}
 # non-numeric factors to numeric factors
 for (col in colNominal.needBinEnc){
     col <- paste(col, "_toNum", sep = "")
