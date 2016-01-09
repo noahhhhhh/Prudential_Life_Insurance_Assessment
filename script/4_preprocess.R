@@ -219,6 +219,18 @@ md.kmeans.medical_keyword <- kmeans(dt.featureEngineed.combine[, colnames[grep("
                                     , nstart = 20)
 Medical_Keyword_Kmeans <- as.factor(md.kmeans.medical_keyword$cluster)
 
+#########################################
+## 1.4 add the kmeans meta features in ##
+#########################################
+load("data/data_meta/kmeans.RData")
+dt.featureEngineed.combine[, Employment_Info_Kmeans := Employment_Info_Kmeans]
+dt.featureEngineed.combine[, Product_Info_Kmeans := Product_Info_Kmeans]
+dt.featureEngineed.combine[, InsuredInfo_Kmeans := InsuredInfo_Kmeans]
+dt.featureEngineed.combine[, Insurance_History_Kmeans := Insurance_History_Kmeans]
+dt.featureEngineed.combine[, Family_Hist_Kmeans := Family_Hist_Kmeans]
+dt.featureEngineed.combine[, Medical_History_Kmeans := Medical_History_Kmeans]
+dt.featureEngineed.combine[, Medical_Keyword_Kmeans := Medical_Keyword_Kmeans]
+
 ###############
 ## 1.5 noise ##
 ###############

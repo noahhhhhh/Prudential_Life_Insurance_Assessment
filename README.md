@@ -18,6 +18,7 @@ The results will help Prudential better understand the predictive power of the d
 6. [07/01/2016 - **Not Done Yet**] add some noise into it
 7. [07/01/2016 - **Done**] tune rf
 8. [09/01/2016 - **Not Done Yet**] knn meta features (need dummy var / binary encode)
+9. [09/01/2016 - **Not Done Yet**] try train offset
 
 ## LOG
 1. I did 3 kinds of imputations (...Impute_Median/Impute_Mean; ...Impute_2016/Impute_1; simply remove the feature)
