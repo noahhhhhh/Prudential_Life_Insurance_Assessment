@@ -85,26 +85,26 @@ colDiscrete <- colDiscrete[!colDiscrete %in% c("Medical_History_10", "Medical_Hi
 med.Medical_History_15 <- median(dt.raw.combine$Medical_History_15, na.rm = T)
 dt.raw.combine[, Medical_History_15_Impute_Median := ifelse(is.na(dt.raw.combine$Medical_History_15), med.Medical_History_15, dt.raw.combine$Medical_History_15)]
 # impute Medical History 15 as a very large number 2016 (version 2)
-dt.raw.combine[, Medical_History_15_Impute_2016 := ifelse(is.na(dt.raw.combine$Medical_History_15), 2016, dt.raw.combine$Medical_History_15)]
+# dt.raw.combine[, Medical_History_15_Impute_2016 := ifelse(is.na(dt.raw.combine$Medical_History_15), 2016, dt.raw.combine$Medical_History_15)]
 # remove Medical History 15 now
 dt.raw.combine[, Medical_History_15 := NULL]
 # remove from colDiscrete
 colDiscrete <- colDiscrete[colDiscrete != "Medical_History_15"]
 # add to colDiscrete
-colDiscrete <- c(colDiscrete, "Medical_History_15_Impute_Median", "Medical_History_15_Impute_2016")
+colDiscrete <- c(colDiscrete, "Medical_History_15_Impute_Median")
 
 # impute Medical History 1
 # impute Medical History 1 as median (version 1)
 med.Medical_History_1 <- median(dt.raw.combine$Medical_History_1, na.rm = T)
 dt.raw.combine[, Medical_History_1_Impute_Median := ifelse(is.na(dt.raw.combine$Medical_History_1), med.Medical_History_1, dt.raw.combine$Medical_History_1)]
 # impute Medical History 1 as a very large number 2016 (version 2)
-dt.raw.combine[, Medical_History_1_Impute_2016 := ifelse(is.na(dt.raw.combine$Medical_History_1), 2016, dt.raw.combine$Medical_History_1)]
+# dt.raw.combine[, Medical_History_1_Impute_2016 := ifelse(is.na(dt.raw.combine$Medical_History_1), 2016, dt.raw.combine$Medical_History_1)]
 # remove Medical History 1 now
 dt.raw.combine[, Medical_History_1 := NULL]
 # remove from colDiscrete
 colDiscrete <- colDiscrete[colDiscrete != "Medical_History_1"]
 # add to colDiscrete
-colDiscrete <- c(colDiscrete, "Medical_History_1_Impute_Median", "Medical_History_1_Impute_2016")
+colDiscrete <- c(colDiscrete, "Medical_History_1_Impute_Median")
 
 ## impute continual NAs features
 colnames.continuous.NAs <- intersect(colContinuous, colnames.colNAs)
