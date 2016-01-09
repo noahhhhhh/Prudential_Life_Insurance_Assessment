@@ -36,7 +36,7 @@ require(caret)
 ####################
 # levels == 3
 no.of.levels <- sapply(dt.featureEngineed.combine[, colNominal, with = F], function (x) {length(names(table(x)))})
-colnames.levels3 <- names(no.of.levels)[no.of.levels == 3]
+colnames.levels3 <- names(no.of.levels)[no.of.levels >= 3]
 colnames.levels3
 # [1] "Product_Info_7"      "InsuredInfo_1"       "Insurance_History_2" "Insurance_History_3"
 # [5] "Insurance_History_4" "Insurance_History_7" "Insurance_History_8" "Insurance_History_9"
@@ -100,9 +100,10 @@ colnames.class_ified_level3[94:120]
 # [21] "Medical_History_3.73" "Medical_History_3.81" "Medical_History_3.82" "Medical_History_3.83"
 # [25] "Medical_History_3.91" "Medical_History_3.92" "Medical_History_3.93"
 
-old <- gsub("\\.", "", colnames.class_ified_level3[94:120])
+colnames.class_ified_level3[785:835] #
+old <- gsub("\\.", "", colnames.class_ified_level3[785:835]) #
 n <- 19
-colnames.class_ified_level3[94:120] <- paste(substr(old, 1, n-1), ".", substr(old, n, nchar(old)), sep = "")
+colnames.class_ified_level3[785:835] <- paste(substr(old, 1, n-1), ".", substr(old, n, nchar(old)), sep = "") #
 colnames.class_ified_level3
 # [1] "Product_Info_7.1"      "Product_Info_7.2"      "Product_Info_7.3"      "InsuredInfo_1.1"      
 # [5] "InsuredInfo_1.2"       "InsuredInfo_1.3"       "Insurance_History_2.1" "Insurance_History_2.2"
@@ -136,7 +137,7 @@ colnames.class_ified_level3
 # [117] "Medical_History_38.3"  "Medical_History_39.1"  "Medical_History_39.2"  "Medical_History_39.3" 
 # [121] "Medical_History_40.1"  "Medical_History_40.2"  "Medical_History_40.3"  "Medical_History_41.1" 
 # [125] "Medical_History_41.2"  "Medical_History_41.3" 
-setnames(dt.class_ified_level3, names(dt.class_ified_level3), colnames.class_ified_level3)
+colnames(dt.class_ified_level3) <- colnames.class_ified_level3
 # combine
 dt.featureEngineed.combine <- data.table(dt.featureEngineed.combine[, !colnames.levels3, with = F], dt.class_ified_level3)
 colNominal <- c(colNominal, colnames.class_ified_level3)
@@ -151,16 +152,72 @@ prep.class.ified.combine <- preProcess(dt.featureEngineed.combine[, !c("Id", "Re
                                        , verbose = T)
 dt.featureEngineed.combine <- predict(prep.class.ified.combine, dt.featureEngineed.combine)
 
-###########################
-## 1.4 knn meta features ##
-##########################
+##############################
+## 1.4 kmeans meta features ##
+##############################
 colnames <- names(dt.featureEngineed.combine)
-
 #####################
 ## Employment_Info ##
 #####################
 str(dt.featureEngineed.combine[, colnames[grep("Employment_Info", colnames)], with = F])
+md.kmeans.employment_info <- kmeans(dt.featureEngineed.combine[, colnames[grep("Employment_Info", colnames)], with = F]
+                                    , centers = 5
+                                    , nstart = 20)
+Employment_Info_Kmeans <- as.factor(md.kmeans.employment_info$cluster)
 
+##################
+## Product_Info ##
+##################
+str(dt.featureEngineed.combine[, colnames[grep("Product_Info", colnames)], with = F])
+md.kmeans.product_info <- kmeans(dt.featureEngineed.combine[, colnames[grep("Product_Info", colnames)], with = F]
+                                 , centers = 5
+                                 , nstart = 20)
+Product_Info_Kmeans <- as.factor(md.kmeans.product_info$cluster)
+
+#################
+## InsuredInfo ##
+#################
+str(dt.featureEngineed.combine[, colnames[grep("InsuredInfo", colnames)], with = F])
+md.kmeans.insuredinfo <- kmeans(dt.featureEngineed.combine[, colnames[grep("InsuredInfo", colnames)], with = F]
+                                , centers = 5
+                                , nstart = 20)
+InsuredInfo_Kmeans <- as.factor(md.kmeans.insuredinfo$cluster)
+
+#######################
+## Insurance_History ##
+#######################
+str(dt.featureEngineed.combine[, colnames[grep("Insurance_History", colnames)], with = F])
+md.kmeans.insured_history <- kmeans(dt.featureEngineed.combine[, colnames[grep("Insurance_History", colnames)], with = F]
+                                    , centers = 5
+                                    , nstart = 20)
+Insurance_History_Kmeans <- as.factor(md.kmeans.insured_history$cluster)
+
+#################
+## Family_Hist ##
+#################
+str(dt.featureEngineed.combine[, colnames[grep("Family_Hist", colnames)], with = F])
+md.kmeans.family_hist <- kmeans(dt.featureEngineed.combine[, colnames[grep("Family_Hist", colnames)], with = F]
+                                , centers = 5
+                                , nstart = 20)
+Family_Hist_Kmeans <- as.factor(md.kmeans.family_hist$cluster)
+
+#####################
+## Medical_History ##
+#####################
+str(dt.featureEngineed.combine[, colnames[grep("Medical_History", colnames)], with = F])
+md.kmeans.medical_history <- kmeans(dt.featureEngineed.combine[, colnames[grep("Medical_History", colnames)], with = F]
+                                    , centers = 5
+                                    , nstart = 20)
+Medical_History_Kmeans <- as.factor(md.kmeans.medical_history$cluster)
+
+#####################
+## Medical_Keyword ##
+#####################
+str(dt.featureEngineed.combine[, colnames[grep("Medical_Keyword", colnames)], with = F])
+md.kmeans.medical_keyword <- kmeans(dt.featureEngineed.combine[, colnames[grep("Medical_Keyword", colnames)], with = F]
+                                    , centers = 5
+                                    , nstart = 20)
+Medical_Keyword_Kmeans <- as.factor(md.kmeans.medical_keyword$cluster)
 
 ###############
 ## 1.5 noise ##
@@ -171,6 +228,15 @@ str(dt.featureEngineed.combine[, colnames[grep("Employment_Info", colnames)], wi
 ############################################################################################
 ## 2.0 save ################################################################################
 ############################################################################################
+save(Employment_Info_Kmeans
+     , Product_Info_Kmeans
+     , InsuredInfo_Kmeans
+     , Insurance_History_Kmeans
+     , Family_Hist_Kmeans
+     , Medical_History_Kmeans
+     , Medical_Keyword_Kmeans
+     , file = "data/data_meta/kmeans.RData")
+
 dt.preprocessed.combine <- dt.featureEngineed.combine
 save(dt.preprocessed.combine, file = "data/data_preprocess/dt_proprocess_combine.RData")
 
