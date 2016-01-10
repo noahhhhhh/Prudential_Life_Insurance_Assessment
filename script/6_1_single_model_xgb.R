@@ -97,7 +97,7 @@ for(s in 1:15){
                                                 , colsample_bytree = .8
                                                 , metrics = "rmse"
                                 )
-                                , early.stop.round = 50
+                                , early.stop.round = 20
                                 , maximize = F
                                 , print.every.n = 150
                                 , nrounds = 8000

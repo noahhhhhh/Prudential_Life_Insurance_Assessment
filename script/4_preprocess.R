@@ -219,6 +219,15 @@ md.kmeans.medical_keyword <- kmeans(dt.featureEngineed.combine[, colnames[grep("
                                     , nstart = 20)
 Medical_Keyword_Kmeans <- as.factor(md.kmeans.medical_keyword$cluster)
 
+save(Employment_Info_Kmeans
+     , Product_Info_Kmeans
+     , InsuredInfo_Kmeans
+     , Insurance_History_Kmeans
+     , Family_Hist_Kmeans
+     , Medical_History_Kmeans
+     , Medical_Keyword_Kmeans
+     , file = "data/data_meta/kmeans.RData")
+
 #########################################
 ## 1.4 add the kmeans meta features in ##
 #########################################
@@ -239,9 +248,24 @@ dt.featureEngineed.combine[, Medical_Keyword_Kmeans := Medical_Keyword_Kmeans]
 #########
 dt.pca.temp <- dt.featureEngineed.combine[, !c("isTest", "Response", "Id"), with = F]
 dt.pca.temp <- dt.pca.temp[, lapply(.SD, as.numeric)]
-md.pca <- prcomp(dt.pca.temp, scale. = F)
+dt.pca.nominal <- data.table(apply(dt.pca.temp[, colNominal, with = F], 2, function(x) x - 1))
+dt.pca.combine <- data.table(dt.pca.temp[, !colNominal, with = F], dt.pca.nominal)
 
+md.pca <- prcomp(dt.pca.combine, scale. = F)
+dim(md.pca$x)
+# biplot(md.pca, scale = 0)
 
+pc.all <- md.pca$x
+pca.var <- md.pca$sdev^2
+pve <- pca.var/sum(pca.var)
+
+plot(pve[180:200] , xlab =" Principal Component ", ylab=" Proportion of
+Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+plot(cumsum(pve[1:150]), xlab=" Principal Component ", ylab ="Cumulative Proportion of 
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+save(pc.all, file = "data/data_meta/pca_all.RData")
 ###############
 ## 1.6 noise ##
 ###############
@@ -251,15 +275,6 @@ md.pca <- prcomp(dt.pca.temp, scale. = F)
 ############################################################################################
 ## 2.0 save ################################################################################
 ############################################################################################
-save(Employment_Info_Kmeans
-     , Product_Info_Kmeans
-     , InsuredInfo_Kmeans
-     , Insurance_History_Kmeans
-     , Family_Hist_Kmeans
-     , Medical_History_Kmeans
-     , Medical_Keyword_Kmeans
-     , file = "data/data_meta/kmeans.RData")
-
 dt.preprocessed.combine <- dt.featureEngineed.combine
 save(dt.preprocessed.combine, file = "data/data_preprocess/dt_proprocess_combine.RData")
 
