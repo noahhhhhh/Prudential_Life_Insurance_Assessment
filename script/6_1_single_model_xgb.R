@@ -185,7 +185,7 @@ score
 # 0.6592457 now is for raw, excluding impute 1
 # 0.6597988 now is for raw, including imptue 1 and 2016
 # 0.6608228 raw features with kmeans meta features
-
+# 0.6608745 raw features with impute 1, without impute 2016
 ################################
 ## 1.3 submit ##################
 ################################
@@ -198,6 +198,7 @@ write.csv(submission, "submit/011_xgb_poisson_recv_with_all_features.csv", row.n
 write.csv(submission, "submit/013_xgb_poisson_recv_with_all_features_excl_impute_1.csv", row.names = FALSE) # 0.6601923 (LB 0.66719)
 write.csv(submission, "submit/014_xgb_poisson_recv_with_raw_features_excl_impute_1.csv", row.names = FALSE) # 0.6592457 (LB 0.66677)
 write.csv(submission, "submit/015_xgb_poisson_recv_with_raw_features_incl_impute_1_2016_with_kmeans_meta_features.csv", row.names = FALSE) # 0.6608228 (highest) (LB 0.66667)
+write.csv(submission, "submit/016_xgb_poisson_recv_with_raw_features_incl_impute_1_.csv", row.names = FALSE) # 0.6608745 (highest) (LB 0.66809)
 
 
 

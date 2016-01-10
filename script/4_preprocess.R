@@ -31,8 +31,17 @@ require(caret)
 # # select them (version 2)
 # # NX: to be continued
 
+##########################
+## 1.2 centre and scale ##
+##########################
+prep.class.ified.combine <- preProcess(dt.featureEngineed.combine[, !c("Id", "Response", "isTest"), with = F]
+                                       , method = c("range")
+                                       # , method = c("center", "scale")
+                                       , verbose = T)
+dt.featureEngineed.combine <- predict(prep.class.ified.combine, dt.featureEngineed.combine)
+
 ####################
-## 1.2 dummyVsars ##
+## 1.3 dummyVsars ##
 ####################
 # levels == 3
 no.of.levels <- sapply(dt.featureEngineed.combine[, colNominal, with = F], function (x) {length(names(table(x)))})
@@ -143,15 +152,6 @@ dt.featureEngineed.combine <- data.table(dt.featureEngineed.combine[, !colnames.
 colNominal <- c(colNominal, colnames.class_ified_level3)
 colNominal <- colNominal[!colNominal %in% colnames.levels3]
 
-##########################
-## 1.3 centre and scale ##
-##########################
-prep.class.ified.combine <- preProcess(dt.featureEngineed.combine[, !c("Id", "Response", "isTest"), with = F]
-                                       # , method = c("range")
-                                       , method = c("center", "scale")
-                                       , verbose = T)
-dt.featureEngineed.combine <- predict(prep.class.ified.combine, dt.featureEngineed.combine)
-
 ##############################
 ## 1.4 kmeans meta features ##
 ##############################
@@ -231,8 +231,19 @@ dt.featureEngineed.combine[, Family_Hist_Kmeans := Family_Hist_Kmeans]
 dt.featureEngineed.combine[, Medical_History_Kmeans := Medical_History_Kmeans]
 dt.featureEngineed.combine[, Medical_Keyword_Kmeans := Medical_Keyword_Kmeans]
 
+#############
+## 1.5 pca ##
+#############
+#########
+## all ##
+#########
+dt.pca.temp <- dt.featureEngineed.combine[, !c("isTest", "Response", "Id"), with = F]
+dt.pca.temp <- dt.pca.temp[, lapply(.SD, as.numeric)]
+md.pca <- prcomp(dt.pca.temp, scale. = F)
+
+
 ###############
-## 1.5 noise ##
+## 1.6 noise ##
 ###############
 
 
