@@ -105,7 +105,7 @@ for(s in 1:15){
                                 , early.stop.round = 20
                                 , maximize = F
                                 , print.every.n = 150
-                                , nrounds = 8000
+                                , nrounds = 15000
                                 , watchlist = list(valid = dmx.valid.fold, train = dmx.train.fold)
                                 , verbose = T
         )
