@@ -29,7 +29,7 @@ dim(dt.train); dim(dt.valid); dim(dt.test)
 
 # apply noise on dt.train
 dim(dt.train)
-dt.train <- Noise(dt.train, noise_l = 0, noise_u = .0002, col_excl = c(colNominal, "Id", "Response", "isTest"))
+dt.train <- Noise(dt.train, noise_l = 0, noise_u = .00005, col_excl = c(colNominal, "Id", "Response", "isTest"))
 dim(dt.train)
 x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
 y.train <- dt.train$Response
