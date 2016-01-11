@@ -95,7 +95,29 @@ ConvertNonNumFactorToNumFactor <- function(dt, col){
     return(dt.col)
 }
 
-
+############################################################################################
+## 5. Noise ################################################################################
+############################################################################################
+## Intro: add noise into a data table. This function references Ivan Liu.
+## Args:
+##  dt(data.table): a data table
+##  noise_l(numeric): lower noise
+##  noise_u(numeric): upper noise
+##  col_excl(a vector of characters): names of columns not included which do not apply the noise
+## Return(data.table): output of a data table after adding noise
+Noise <- function(dt, noise_l = -.00001, noise_u = .00001, col_excl){
+    dim(dt)
+    dt_noise <- apply(dt[, !col_excl, with = F], 2, function(x){
+        runif(n = length(x), min = noise_l * diff(range(x)), max = noise_u * diff(range(x)))
+    })
+    dt_noise <- dt[, !col_excl, with = F] + dt_noise
+    
+    dt_noise <- data.table(dt_noise, dt[, col_excl, with = F])
+    dt <- rbind(dt, dt_noise)
+    dim(dt)
+    dt <- dt[sample(1:nrow(dt), size = nrow(dt))]
+    return(dt)
+}
 
 
 

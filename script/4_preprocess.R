@@ -243,6 +243,7 @@ dt.featureEngineed.combine[, Medical_Keyword_Kmeans := Medical_Keyword_Kmeans]
 #############
 ## 1.5 pca ##
 #############
+colnames <- names(dt.featureEngineed.combine)
 #########
 ## all ##
 #########
@@ -259,13 +260,210 @@ pc.all <- md.pca$x
 pca.var <- md.pca$sdev^2
 pve <- pca.var/sum(pca.var)
 
-plot(pve[180:200] , xlab =" Principal Component ", ylab=" Proportion of
+plot(pve[1:150] , xlab =" Principal Component ", ylab=" Proportion of
 Variance Explained ", ylim=c(0,1) ,type = 'b')
 
 plot(cumsum(pve[1:150]), xlab=" Principal Component ", ylab ="Cumulative Proportion of 
      Variance Explained ", ylim=c(0,1) ,type = 'b')
 
 save(pc.all, file = "data/data_meta/pca_all.RData")
+
+#####################
+## Employment_Info ##
+#####################
+str(dt.pca.combine[, colnames[grep("Employment_Info", colnames)], with = F])
+md.pca.employment_info <- prcomp(dt.pca.combine[, colnames[grep("Employment_Info", colnames)], with = F]
+                                 , scale. = F)
+dim(md.pca.employment_info$x)
+Employment_Info_PC <- md.pca.employment_info$x
+
+pca.employment_info.var <- md.pca.employment_info$sdev^2
+pve.employment_info <- pca.employment_info.var/sum(pca.employment_info.var)
+
+plot(pve.employment_info[1:10] , xlab =" Principal Component ", ylab=" Proportion of
+Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+plot(cumsum(pve.employment_info[1:10]), xlab=" Principal Component ", ylab ="Cumulative Proportion of 
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+##################
+## Product_Info ##
+##################
+str(dt.pca.combine[, colnames[grep("Product_Info", colnames)], with = F])
+md.pca.product_info <- prcomp(dt.pca.combine[, colnames[grep("Product_Info", colnames)], with = F]
+                                 , scale. = F)
+dim(md.pca.product_info$x)
+Product_Info_PC <- md.pca.product_info$x
+
+pca.product_info.var <- md.pca.product_info$sdev^2
+pve.product_info <- pca.product_info.var/sum(pca.product_info.var)
+
+plot(pve.product_info[1:20] , xlab =" Principal Component ", ylab=" Proportion of
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+plot(cumsum(pve.product_info[1:20]), xlab=" Principal Component ", ylab ="Cumulative Proportion of 
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+#################
+## InsuredInfo ##
+#################
+str(dt.pca.combine[, colnames[grep("InsuredInfo", colnames)], with = F])
+md.pca.insuredinfo <- prcomp(dt.pca.combine[, colnames[grep("InsuredInfo", colnames)], with = F]
+                              , scale. = F)
+dim(md.pca.insuredinfo$x)
+InsuredInfo_PC <- md.pca.insuredinfo$x
+
+pca.insuredinfo.var <- md.pca.insuredinfo$sdev^2
+pve.insuredinfo <- pca.insuredinfo.var/sum(pca.insuredinfo.var)
+
+plot(pve.insuredinfo[1:12] , xlab =" Principal Component ", ylab=" Proportion of
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+plot(cumsum(pve.insuredinfo[1:12]), xlab=" Principal Component ", ylab ="Cumulative Proportion of 
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+#######################
+## Insurance_History ##
+#######################
+str(dt.pca.combine[, colnames[grep("Insurance_History", colnames)], with = F])
+md.pca.insurance_history <- prcomp(dt.pca.combine[, colnames[grep("Insurance_History", colnames)], with = F]
+                                   , scale. = F)
+dim(md.pca.insurance_history$x)
+Insurance_History_PC <- md.pca.insurance_history$x
+
+pca.insurance_history.var <- md.pca.insurance_history$sdev^2
+pve.insurance_history <- pca.insurance_history.var/sum(pca.insurance_history.var)
+
+plot(pve.insurance_history[1:4] , xlab =" Principal Component ", ylab=" Proportion of
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+plot(cumsum(pve.insurance_history[1:4]), xlab=" Principal Component ", ylab ="Cumulative Proportion of 
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+#################
+## Family_Hist ##
+#################
+str(dt.pca.combine[, colnames[grep("Family_Hist", colnames)], with = F])
+md.pca.family_hist <- prcomp(dt.pca.combine[, colnames[grep("Family_Hist", colnames)], with = F]
+                                   , scale. = F)
+dim(md.pca.family_hist$x)
+Family_Hist_PC <- md.pca.family_hist$x
+
+pca.family_hist.var <- md.pca.family_hist$sdev^2
+pve.family_hist <- pca.family_hist.var/sum(pca.family_hist.var)
+
+plot(pve.family_hist[1:7] , xlab =" Principal Component ", ylab=" Proportion of
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+plot(cumsum(pve.family_hist[1:7]), xlab=" Principal Component ", ylab ="Cumulative Proportion of 
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+#####################
+## Medical_History ##
+#####################
+str(dt.pca.combine[, colnames[grep("Medical_History", colnames)], with = F])
+md.pca.medical_history <- prcomp(dt.pca.combine[, colnames[grep("Medical_History", colnames)], with = F]
+                             , scale. = F)
+dim(md.pca.medical_history$x)
+Medical_History_PC <- md.pca.medical_history$x
+
+pca.medical_history.var <- md.pca.medical_history$sdev^2
+pve.medical_history <- pca.medical_history.var/sum(pca.medical_history.var)
+
+plot(pve.medical_history[1:60] , xlab =" Principal Component ", ylab=" Proportion of
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+plot(cumsum(pve.medical_history[1:60]), xlab=" Principal Component ", ylab ="Cumulative Proportion of 
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+#####################
+## Medical_Keyword ##
+#####################
+str(dt.pca.combine[, colnames[grep("Medical_Keyword", colnames)], with = F])
+md.pca.medical_keyword <- prcomp(dt.pca.combine[, colnames[grep("Medical_Keyword", colnames)], with = F]
+                                 , scale. = F)
+dim(md.pca.medical_keyword$x)
+Medical_Keyword_PC <- md.pca.medical_keyword$x
+
+pca.medical_keyword.var <- md.pca.medical_keyword$sdev^2
+pve.medical_keyword <- pca.medical_keyword.var/sum(pca.medical_keyword.var)
+
+plot(pve.medical_keyword[1:40] , xlab =" Principal Component ", ylab=" Proportion of
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+plot(cumsum(pve.medical_keyword[1:40]), xlab=" Principal Component ", ylab ="Cumulative Proportion of 
+     Variance Explained ", ylim=c(0,1) ,type = 'b')
+
+#####################################
+## 1.6 combine pca as a data table ##
+#####################################
+dt.pca.all <- data.table(pc.all)
+
+dt.pca.Employment_Info <- data.table(Employment_Info_PC)
+setnames(dt.pca.Employment_Info
+         , names(dt.pca.Employment_Info)
+         , paste('Employment_Info_', names(dt.pca.Employment_Info), sep = ""))
+
+dt.pca.Product_Info <- data.table(Product_Info_PC)
+setnames(dt.pca.Product_Info
+         , names(dt.pca.Product_Info)
+         , paste('Product_Info_', names(dt.pca.Product_Info), sep = ""))
+
+dt.pca.InsuredInfo <- data.table(InsuredInfo_PC)
+setnames(dt.pca.InsuredInfo
+         , names(dt.pca.InsuredInfo)
+         , paste('InsuredInfo_', names(dt.pca.InsuredInfo), sep = ""))
+
+dt.pca.Insurance_History <- data.table(Insurance_History_PC)
+setnames(dt.pca.Insurance_History
+         , names(dt.pca.Insurance_History)
+         , paste('Insurance_History_', names(dt.pca.Insurance_History), sep = ""))
+
+dt.pca.Family_Hist <- data.table(Family_Hist_PC)
+setnames(dt.pca.Family_Hist
+         , names(dt.pca.Family_Hist)
+         , paste('Family_Hist_', names(dt.pca.Family_Hist), sep = ""))
+
+dt.pca.Medical_History <- data.table(Medical_History_PC)
+setnames(dt.pca.Medical_History
+         , names(dt.pca.Medical_History)
+         , paste('Medical_History_', names(dt.pca.Medical_History), sep = ""))
+
+dt.pca.Medical_Keyword <- data.table(Medical_Keyword_PC)
+setnames(dt.pca.Medical_Keyword
+         , names(dt.pca.Medical_Keyword)
+         , paste('Medical_Keyword_', names(dt.pca.Medical_Keyword), sep = ""))
+
+dt.pca.combine <- data.table(Id = dt.featureEngineed.combine$Id
+                             , isTest = dt.featureEngineed.combine$isTest
+                             , Response = dt.featureEngineed.combine$Response
+                             , dt.pca.Employment_Info[, 1:10, with = F]
+                             , dt.pca.Product_Info[, 1:20, with = F]
+                             , dt.pca.InsuredInfo[, 1:12, with = F]
+                             , dt.pca.Insurance_History[, 1:4, with = F]
+                             , dt.pca.Family_Hist[, 1:7,, with = F]
+                             , dt.pca.Medical_History[, 1:60, with = F]
+                             , dt.pca.Medical_Keyword[, 1:40, with = F]
+                             )
+
+dt.pca.all.combine <- data.table(Id = dt.featureEngineed.combine$Id
+                                 , isTest = dt.featureEngineed.combine$isTest
+                                 , Response = dt.featureEngineed.combine$Response
+                                 , dt.pca.all[, 1:150, with = F])
+
+save(dt.pca.all
+     , dt.pca.Employment_Info
+     , dt.pca.Product_Info
+     , dt.pca.InsuredInfo
+     , dt.pca.Insurance_History
+     , dt.pca.Family_Hist
+     , dt.pca.Medical_History
+     , dt.pca.Medical_Keyword
+     
+     , dt.pca.combine
+     , dt.pca.all.combine
+     , file = "data/data_meta/pca.RData")
+
 ###############
 ## 1.6 noise ##
 ###############
@@ -276,7 +474,8 @@ save(pc.all, file = "data/data_meta/pca_all.RData")
 ## 2.0 save ################################################################################
 ############################################################################################
 dt.preprocessed.combine <- dt.featureEngineed.combine
-save(dt.preprocessed.combine, file = "data/data_preprocess/dt_proprocess_combine.RData")
+save(dt.preprocessed.combine, colNominal, colDiscrete, colContinuous, file = "data/data_preprocess/dt_proprocess_combine.RData")
+
 
 
 

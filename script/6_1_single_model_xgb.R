@@ -2,6 +2,7 @@ rm(list = ls()); gc();
 setwd("/Volumes/Data Science/Google Drive/data_science_competition/kaggle/Prudential_Life_Insurance_Assessment/")
 load("data/data_preprocess/dt_proprocess_combine.RData")
 source("script/utilities/metrics.R")
+source("script/utilities/preprocess.R")
 require(data.table)
 require(caret)
 require(Metrics)
@@ -26,6 +27,10 @@ dt.valid2 <- dt.valid[-ind.valid]
 dt.test <- dt.preprocessed.combine[isTest == 1]
 dim(dt.train); dim(dt.valid); dim(dt.test)
 
+# apply noise on dt.train
+dim(dt.train)
+dt.train <- Noise(dt.train, noise_l = 0, noise_u = .0002, col_excl = c(colNominal, "Id", "Response", "isTest"))
+dim(dt.train)
 x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
 y.train <- dt.train$Response
 dmx.train <- xgb.DMatrix(data =  x.train, label = y.train)
