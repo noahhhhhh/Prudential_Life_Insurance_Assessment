@@ -28,9 +28,9 @@ dt.test <- dt.preprocessed.combine[isTest == 1]
 dim(dt.train); dim(dt.valid); dim(dt.test)
 
 # apply noise on dt.train
-dim(dt.train)
-dt.train <- Noise(dt.train, noise_l = 0, noise_u = .00005, col_excl = c(colNominal, "Id", "Response", "isTest"))
-dim(dt.train)
+# dim(dt.train)
+# dt.train <- Noise(dt.train, noise_l = 0, noise_u = .00005, col_excl = c(colNominal, "Id", "Response", "isTest"))
+# dim(dt.train)
 x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
 y.train <- dt.train$Response
 dmx.train <- xgb.DMatrix(data =  x.train, label = y.train)
@@ -95,7 +95,7 @@ for(s in 1:15){
                                 , booster = "gbtree"
                                 , objective = "count:poisson"
                                 , params = list(nthread = 8
-                                                , eta = .025
+                                                , eta = .5
                                                 , min_child_weight = 20
                                                 , max_depth = 8
                                                 , subsample = .8
@@ -105,7 +105,7 @@ for(s in 1:15){
                                 , early.stop.round = 20
                                 , maximize = F
                                 , print.every.n = 150
-                                , nrounds = 15000
+                                , nrounds = 25000
                                 , watchlist = list(valid = dmx.valid.fold, train = dmx.train.fold)
                                 , verbose = T
         )
