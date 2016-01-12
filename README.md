@@ -19,7 +19,7 @@ The results will help Prudential better understand the predictive power of the d
 7. [07/01/2016 - **Done**] tune rf
 8. [09/01/2016 - **Done**] knn meta features (need dummy var / binary encode). Failed in xgb, rf, and lr.
 9. [09/01/2016 - **Not Done Yet**] try train offset
-10. [09/01/2016 - **Not Done Yet**] pca meta features (need dummy var)
+10. [09/01/2016 - **Done**] pca meta features (need dummy var)
 
 ## LOG
 1. I did 3 kinds of imputations (...Impute_Median/Impute_Mean; ...Impute_2016/Impute_1; simply remove the feature)
