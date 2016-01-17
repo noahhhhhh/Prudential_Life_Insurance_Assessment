@@ -39,7 +39,27 @@ colNominal <- c(colNominal, "BMI_Group")
 # colNominal <- colNominal[!colNominal %in% "BMI"]
 
 ############################################################################################
-## 6.0 save ################################################################################
+## 5.0 square, cube ########################################################################
+############################################################################################
+dt.class.ified.combine[, Ins_Age_2 := Ins_Age ^ 2]
+dt.class.ified.combine[, Ht_2 := Ht ^ 2]
+dt.class.ified.combine[, Wt_2 := Wt ^ 2]
+dt.class.ified.combine[, BNI_2 := BMI ^ 2]
+colNominal <- c(colContinuous, "Ins_Age_2", "Ht_2", "Wt_2", "BNI_2")
+
+dt.class.ified.combine[, Ins_Age_3 := Ins_Age ^ 3]
+dt.class.ified.combine[, Ht_3 := Ht ^ 3]
+dt.class.ified.combine[, Wt_3 := Wt ^ 3]
+dt.class.ified.combine[, BNI_3 := BMI ^ 3]
+colNominal <- c(colContinuous, "Ins_Age_3", "Ht_3", "Wt_3", "BNI_3")
+
+############################################################################################
+## 6.0 log #################################################################################
+############################################################################################
+
+
+############################################################################################
+## 7.0 save ################################################################################
 ############################################################################################
 dt.featureEngineed.combine <- dt.class.ified.combine
 save(dt.featureEngineed.combine, colNominal, colDiscrete, colContinuous, file = "data/data_enginee/dt_featureEngineed_combine.RData")
