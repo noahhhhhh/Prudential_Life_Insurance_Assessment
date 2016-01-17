@@ -45,13 +45,13 @@ dt.class.ified.combine[, Ins_Age_2 := Ins_Age ^ 2]
 dt.class.ified.combine[, Ht_2 := Ht ^ 2]
 dt.class.ified.combine[, Wt_2 := Wt ^ 2]
 dt.class.ified.combine[, BNI_2 := BMI ^ 2]
-colNominal <- c(colContinuous, "Ins_Age_2", "Ht_2", "Wt_2", "BNI_2")
+colContinuous <- c(colContinuous, "Ins_Age_2", "Ht_2", "Wt_2", "BNI_2")
 
 dt.class.ified.combine[, Ins_Age_3 := Ins_Age ^ 3]
 dt.class.ified.combine[, Ht_3 := Ht ^ 3]
 dt.class.ified.combine[, Wt_3 := Wt ^ 3]
 dt.class.ified.combine[, BNI_3 := BMI ^ 3]
-colNominal <- c(colContinuous, "Ins_Age_3", "Ht_3", "Wt_3", "BNI_3")
+colContinuous <- c(colContinuous, "Ins_Age_3", "Ht_3", "Wt_3", "BNI_3")
 
 ############################################################################################
 ## 6.0 log #################################################################################

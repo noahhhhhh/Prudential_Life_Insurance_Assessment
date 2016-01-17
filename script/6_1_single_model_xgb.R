@@ -206,7 +206,7 @@ write.csv(submission, "submit/013_xgb_poisson_recv_with_all_features_excl_impute
 write.csv(submission, "submit/014_xgb_poisson_recv_with_raw_features_excl_impute_1.csv", row.names = FALSE) # 0.6592457 (LB 0.66677)
 write.csv(submission, "submit/015_xgb_poisson_recv_with_raw_features_incl_impute_1_2016_with_kmeans_meta_features.csv", row.names = FALSE) # 0.6608228 (highest) (LB 0.66667)
 write.csv(submission, "submit/016_xgb_poisson_recv_with_raw_features_incl_impute_1_.csv", row.names = FALSE) # 0.6608745 (highest) (LB 0.66809)
-write.csv(submission, "submit/017_xgb_poisson_recv_with_square_cube_transform.csv", row.names = FALSE) # 0.6603385
+write.csv(submission, "submit/017_xgb_poisson_recv_with_square_cube_transform.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
 
 
 
