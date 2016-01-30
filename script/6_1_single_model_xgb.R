@@ -134,7 +134,7 @@ for(s in 1:15){
     cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
     pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
     print(paste("loop", s, ": valid score -", ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)))
-
+    
     cat("applying optCuts on test ...\n")
     cuts.test <- c(min(pred.test), optCuts$par, max(pred.test))
     pred.test.op <- as.integer(cut2(pred.test, cuts.test))
@@ -207,9 +207,3 @@ write.csv(submission, "submit/014_xgb_poisson_recv_with_raw_features_excl_impute
 write.csv(submission, "submit/015_xgb_poisson_recv_with_raw_features_incl_impute_1_2016_with_kmeans_meta_features.csv", row.names = FALSE) # 0.6608228 (highest) (LB 0.66667)
 write.csv(submission, "submit/016_xgb_poisson_recv_with_raw_features_incl_impute_1_.csv", row.names = FALSE) # 0.6608745 (highest) (LB 0.66809)
 write.csv(submission, "submit/017_xgb_poisson_recv_with_square_cube_transform.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
-
-
-
-
-
-

@@ -127,17 +127,15 @@ sapply(dt.imputed.combine[, colNominal.needOnehot, with = F], class)
 # but change them to factor vars
 colNominal.needDummyVars <- names(no.of.levels[no.of.levels == 3])
 colNominal.needDummyVars
-# [1] "Product_Info_7"      "InsuredInfo_1"       "Insurance_History_2" "Insurance_History_3"
-# [5] "Insurance_History_4" "Insurance_History_7" "Insurance_History_8" "Insurance_History_9"
-# [9] "Family_Hist_1"       "Medical_History_3"   "Medical_History_5"   "Medical_History_6"  
-# [13] "Medical_History_7"   "Medical_History_8"   "Medical_History_9"   "Medical_History_11" 
-# [17] "Medical_History_12"  "Medical_History_13"  "Medical_History_14"  "Medical_History_16" 
-# [21] "Medical_History_17"  "Medical_History_18"  "Medical_History_19"  "Medical_History_20" 
-# [25] "Medical_History_21"  "Medical_History_23"  "Medical_History_25"  "Medical_History_26" 
-# [29] "Medical_History_27"  "Medical_History_28"  "Medical_History_29"  "Medical_History_30" 
-# [33] "Medical_History_31"  "Medical_History_33"  "Medical_History_34"  "Medical_History_35" 
-# [37] "Medical_History_36"  "Medical_History_37"  "Medical_History_38"  "Medical_History_39" 
-# [41] "Medical_History_40"  "Medical_History_41" 
+# [1] "NewFeature1"         "Product_Info_7"      "InsuredInfo_1"       "Insurance_History_2" "Insurance_History_3"
+# [6] "Insurance_History_4" "Insurance_History_7" "Insurance_History_8" "Insurance_History_9" "Family_Hist_1"      
+# [11] "Medical_History_3"   "Medical_History_5"   "Medical_History_6"   "Medical_History_7"   "Medical_History_8"  
+# [16] "Medical_History_9"   "Medical_History_11"  "Medical_History_12"  "Medical_History_13"  "Medical_History_14" 
+# [21] "Medical_History_16"  "Medical_History_17"  "Medical_History_18"  "Medical_History_19"  "Medical_History_20" 
+# [26] "Medical_History_21"  "Medical_History_23"  "Medical_History_25"  "Medical_History_26"  "Medical_History_27" 
+# [31] "Medical_History_28"  "Medical_History_29"  "Medical_History_30"  "Medical_History_31"  "Medical_History_33" 
+# [36] "Medical_History_34"  "Medical_History_35"  "Medical_History_36"  "Medical_History_37"  "Medical_History_38" 
+# [41] "Medical_History_39"  "Medical_History_40"  "Medical_History_41" 
 
 ##################
 ## 1.2 discrete ##

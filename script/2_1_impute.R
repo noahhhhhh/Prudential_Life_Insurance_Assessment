@@ -7,7 +7,7 @@ source("script/utilities/preprocess.R") # utilities functions for preprocessing 
 ## 1.0 impute ##############################################################################
 ############################################################################################
 ##########################################################
-## 1.1 before impute, create a new feature (Num_of_NAs) ##
+## 1.1 before impute, create new features (Num_of_NAs) ##
 ##########################################################
 Num_of_NAs <- apply(dt.raw.combine, 1, function (x) sum(is.na(x)))
 Employment_Info_Num_of_NAs <- apply(dt.raw.combine[, grep("Employment_Info", colnames(dt.raw.combine)), with = F], 1, function (x) sum(is.na(x)))
@@ -117,6 +117,13 @@ colnames.continuous.NAs
 # 0.11                0.18                0.42                0.49                0.57 
 # Family_Hist_4       Family_Hist_5
 # 0.33                0.70
+
+# add a new feature based on Family_Hist_2 and Family_Hist_3
+dt.raw.combine$NewFeature1 <- NA
+dt.raw.combine$NewFeature1 <- ifelse(dt.raw.combine$Family_Hist_2>=0 & is.na(dt.raw.combine$Family_Hist_3), 1, dt.raw.combine$NewFeature1)
+dt.raw.combine$NewFeature1 <- ifelse(dt.raw.combine$Family_Hist_3>=0 & is.na(dt.raw.combine$Family_Hist_2), 0, dt.raw.combine$NewFeature1)
+dt.raw.combine$NewFeature1[is.na(dt.raw.combine$NewFeature1)] <- -1
+colNominal <- c("NewFeature1", colNominal)
 
 # impute as median (version 1)
 median.Employment_Info_1 <- median(dt.raw.combine$Employment_Info_1, na.rm = T)
