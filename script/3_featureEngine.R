@@ -54,11 +54,32 @@ dt.class.ified.combine[, BNI_3 := BMI ^ 3]
 colContinuous <- c(colContinuous, "Ins_Age_3", "Ht_3", "Wt_3", "BNI_3")
 
 ############################################################################################
-## 6.0 log #################################################################################
+## 6.0 t-sne ###############################################################################
+############################################################################################
+require(Rtsne)
+mx.class.ified.combine <- model.matrix(Response ~., mx.class.ified.combine <- dt.class.ified.combine[, !c("Id", "isTest"), with = F])[, -1]
+tsne.out <- Rtsne(mx.class.ified.combine
+                  , check_duplicates = F
+                  , pca = F
+                  , verbose = T
+                  , perplexity = 30
+                  , theta = .5
+                  , dims = 2)
+
+plot(tsne.out$Y, col = dt.class.ified.combine[dt.class.ified.combine$Response != 0]$Response)
+
+mx.tsne.out <- tsne.out$Y
+save(mx.tsne.out, file = "data/data_meta/dt_tsne.RData")
+dt.class.ified.combine[, tsne_1 := mx.tsne.out[, 1]]
+dt.class.ified.combine[, tsne_2 := mx.tsne.out[, 2]]
+colContinuous <- c(colContinuous, "tsne_1", "tsne_2")
+
+############################################################################################
+## 7.0 log #################################################################################
 ############################################################################################
 
 ############################################################################################
-## 7.0 save ################################################################################
+## 8.0 save ################################################################################
 ############################################################################################
 dt.featureEngineed.combine <- dt.class.ified.combine
 save(dt.featureEngineed.combine, colNominal, colDiscrete, colContinuous, file = "data/data_enginee/dt_featureEngineed_combine.RData")

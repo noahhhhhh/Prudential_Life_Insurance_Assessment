@@ -57,7 +57,7 @@ m <- 1; n <- 2
 
 cat("creating 3 folds ...\n")
 set.seed(888)
-# create a 3 folds
+# create a 4 folds
 folds <- createFolds(dt.train$Response, k = 3, list = F)
 
 # reproduce with m = 1 and n = 2
@@ -192,6 +192,7 @@ score
 # 0.6608228 raw features with kmeans meta features
 # 0.6608745 raw features with impute 1, without impute 2016
 # 0.6603385 with square and cube Age, Wt, Ht, and BMI
+# 0.6606217 with tsne and NewFeature1
 
 ################################
 ## 1.3 submit ##################
@@ -201,9 +202,13 @@ submission$Response = round(pred.test.final.op)
 table(submission$Response)
 # 1    2    3    4    5    6    7    8 
 # 1715  934 1504 1693 2259 2672 3333 5655
+
+# 1    2    3    4    5    6    7    8 
+# 1568 1024 1536 1640 2178 2803 3127 5889 
 write.csv(submission, "submit/011_xgb_poisson_recv_with_all_features.csv", row.names = FALSE) # 0.6601923 (highest) (LB 0.66819) *
 write.csv(submission, "submit/013_xgb_poisson_recv_with_all_features_excl_impute_1.csv", row.names = FALSE) # 0.6601923 (LB 0.66719)
 write.csv(submission, "submit/014_xgb_poisson_recv_with_raw_features_excl_impute_1.csv", row.names = FALSE) # 0.6592457 (LB 0.66677)
 write.csv(submission, "submit/015_xgb_poisson_recv_with_raw_features_incl_impute_1_2016_with_kmeans_meta_features.csv", row.names = FALSE) # 0.6608228 (highest) (LB 0.66667)
 write.csv(submission, "submit/016_xgb_poisson_recv_with_raw_features_incl_impute_1_.csv", row.names = FALSE) # 0.6608745 (highest) (LB 0.66809)
 write.csv(submission, "submit/017_xgb_poisson_recv_with_square_cube_transform.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
+write.csv(submission, "submit/018_xgb_poisson_recv_with_tsne_and_newfeature1.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
