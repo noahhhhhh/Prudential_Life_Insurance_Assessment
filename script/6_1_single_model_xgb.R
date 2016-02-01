@@ -169,7 +169,7 @@ for(s in 1:15){
     cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
     pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
     print(paste("loop", s, ": valid score -", ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)))
-    # [1] "loop 1 : valid score - 0.662693668247028"
+    # [1] "loop 1 : valid score - 0.662693668247028" ()
     
     cat("applying optCuts on test ...\n")
     cuts.test <- c(min(pred.test), optCuts$par, max(pred.test))
@@ -222,7 +222,7 @@ pred.test.final.op <- apply(dt.pred.test.op, 1, function(x) median(x))
 cat("check the score")
 score <- ScoreQuadraticWeightedKappa(y.valid, round(pred.valid.final.op))
 score
-# 0.6601923 *
+# 0.6601923
 # 0.6592457 now is for raw, excluding impute 1
 # 0.6597988 now is for raw, including imptue 1 and 2016
 # 0.6608228 raw features with kmeans meta features
@@ -230,6 +230,7 @@ score
 # 0.6603385 with square and cube Age, Wt, Ht, and BMI
 # 0.6606217 with tsne and NewFeature1
 # 0.6589659 raw with binary encode
+# 0.6640989 with -1 as the impute and all engineed features (lb 0.66857) *
 
 ################################
 ## 1.3 submit ##################
@@ -241,7 +242,7 @@ table(submission$Response)
 # 1715  934 1504 1693 2259 2672 3333 5655
 
 # 1    2    3    4    5    6    7    8 
-# 1568 1024 1536 1640 2178 2803 3127 5889 
+# 1663 1127 1419 1632 2193 2539 3648 5544
 write.csv(submission, "submit/011_xgb_poisson_recv_with_all_features.csv", row.names = FALSE) # 0.6601923 (highest) (LB 0.66819) *
 write.csv(submission, "submit/013_xgb_poisson_recv_with_all_features_excl_impute_1.csv", row.names = FALSE) # 0.6601923 (LB 0.66719)
 write.csv(submission, "submit/014_xgb_poisson_recv_with_raw_features_excl_impute_1.csv", row.names = FALSE) # 0.6592457 (LB 0.66677)
@@ -250,6 +251,7 @@ write.csv(submission, "submit/016_xgb_poisson_recv_with_raw_features_incl_impute
 write.csv(submission, "submit/017_xgb_poisson_recv_with_square_cube_transform.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
 write.csv(submission, "submit/018_xgb_poisson_recv_with_tsne_and_newfeature1.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
 write.csv(submission, "submit/019_xgb_poisson_recv_with_binary_encode.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
+write.csv(submission, "submit/020_xgb_poisson_recv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
 
 
 
