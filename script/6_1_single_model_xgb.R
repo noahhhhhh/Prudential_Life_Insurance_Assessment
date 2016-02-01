@@ -94,6 +94,7 @@ for(s in 1:15){
         cv.xgb.out <- xgb.train(data = dmx.train.fold
                                 , booster = "gbtree"
                                 , objective = "count:poisson"
+                                # , objective = "reg:linear"
                                 , params = list(nthread = 8
                                                 , eta = .025
                                                 , min_child_weight = 20
@@ -102,7 +103,7 @@ for(s in 1:15){
                                                 , colsample_bytree = .8
                                                 , metrics = "rmse"
                                 )
-                                , early.stop.round = 20
+                                , early.stop.round = 100
                                 , maximize = F
                                 , print.every.n = 150
                                 , nrounds = 18000
@@ -118,8 +119,6 @@ for(s in 1:15){
     pred.valid <- pred.valid / 3
     pred.test <- pred.test / 3
     
-    pred.valid.op <- pred.valid
-    pred.test.op <- pred.test
     cat("optimising the cuts on pred.train ...\n")
     SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
         cuts <- c(min(pred.train), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train))
@@ -129,11 +128,48 @@ for(s in 1:15){
     }
     optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
     optCuts
-    
+#     for(i in 1:8){
+#         cuts <- as.numeric()
+#         pred <- as.integer()
+#         offset <- 0
+#         y.pred <- as.numeric()
+#         y <- as.numeric()
+#         err <- 0
+#         offsets <- as.numeric()
+#         
+#         offsetFun <- function(x = .1){
+#             cuts <- c(min(pred.train), seq(1.5, 7.5, by = 1), max(pred.train))
+#             pred <- as.integer(cut2(pred.train, cuts))
+#             offset <- x
+#             
+#             pred[pred == i] <- pred[pred == i] + offset
+#             y.pred <- as.integer(cut2(y.pred, cuts))
+#             
+#             err <- ScoreQuadraticWeightedKappa(pred, y.train)
+#             
+#             return(-err)
+#         }
+#         optOffset <- optim(.1, offsetFun, method = "Brent", lower = -8, upper = 8)
+#         offsets[i] <- optOffset$par
+#         
+#     }
+#     
+#     cuts <- c(min(pred.train), seq(1.5, 7.5, by = 1), max(pred.train))
+#     pred.valid.op <- as.integer(cut2(pred.valid, cuts))
+#     pred.test.op <- as.integer(cut2(pred.test, cuts))
+#     for(j in 1:8){
+#         pred.valid[pred.valid.op == j] <- pred.valid[pred.valid.op == j] + offsets[j]
+#         pred.test[pred.test.op == j] <- pred.test[pred.test.op == j] + offset[j]
+#     }
+#     pred.valid.op <- as.integer(cut2(pred.valid, cuts))
+#     pred.test.op <- as.integer(cut2(pred.test, cuts))
+#     print(paste("loop", s, ": valid score -", ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)))
+#     
     cat("applying optCuts on valid ...\n")
     cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
     pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
     print(paste("loop", s, ": valid score -", ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)))
+    # [1] "loop 1 : valid score - 0.662693668247028"
     
     cat("applying optCuts on test ...\n")
     cuts.test <- c(min(pred.test), optCuts$par, max(pred.test))
@@ -147,7 +183,7 @@ for(s in 1:15){
     ls.pred.valid.op[[s]] <- pred.valid.op
     ls.pred.test.op[[s]] <- pred.test.op
     
-    ls.optCuts[[s]] <- optCuts$par
+    # ls.optCuts[[s]] <- optCuts$par
 }
 cat("transform the train, valid, and test\n")
 dt.pred.train <- as.data.table(sapply(ls.pred.train, print))
@@ -156,8 +192,8 @@ dt.pred.test <- as.data.table(sapply(ls.pred.test, print))
 cat("transform the op\n")
 dt.pred.valid.op <- as.data.table(sapply(ls.pred.valid.op, print))
 dt.pred.test.op <- as.data.table(sapply(ls.pred.test.op, print))
-cat("transform optCuts\n")
-dt.optCuts <- as.data.table(sapply(ls.optCuts, print))
+# cat("transform optCuts\n")
+# dt.optCuts <- as.data.table(sapply(ls.optCuts, print))
 
 dt.pred.train
 dt.pred.valid
@@ -166,7 +202,7 @@ dt.pred.test
 dt.pred.valid.op
 dt.pred.test.op
 
-dt.optCuts
+# dt.optCuts
 
 cat("median combine the preds\n")
 pred.train.final <- apply(dt.pred.valid, 1, function(x) median(x))
@@ -176,8 +212,8 @@ pred.test.final <- apply(dt.pred.test, 1, function(x) median(x))
 pred.valid.final.op <- apply(dt.pred.valid.op, 1, function(x) median(x))
 pred.test.final.op <- apply(dt.pred.test.op, 1, function(x) median(x))
 
-cat("median combine the opCuts")
-opCuts.final <- apply(dt.optCuts, 1, function(x) median(x))
+# cat("median combine the opCuts")
+# opCuts.final <- apply(dt.optCuts, 1, function(x) median(x))
 
 # cat("apply opCuts on pred.valid.final")
 # cuts.valid.final <- c(min(pred.valid.final), opCuts.final, max(pred.valid.final))
@@ -193,6 +229,7 @@ score
 # 0.6608745 raw features with impute 1, without impute 2016
 # 0.6603385 with square and cube Age, Wt, Ht, and BMI
 # 0.6606217 with tsne and NewFeature1
+# 0.6589659 raw with binary encode
 
 ################################
 ## 1.3 submit ##################
@@ -212,3 +249,9 @@ write.csv(submission, "submit/015_xgb_poisson_recv_with_raw_features_incl_impute
 write.csv(submission, "submit/016_xgb_poisson_recv_with_raw_features_incl_impute_1_.csv", row.names = FALSE) # 0.6608745 (highest) (LB 0.66809)
 write.csv(submission, "submit/017_xgb_poisson_recv_with_square_cube_transform.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
 write.csv(submission, "submit/018_xgb_poisson_recv_with_tsne_and_newfeature1.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
+write.csv(submission, "submit/019_xgb_poisson_recv_with_binary_encode.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
+
+
+
+
+

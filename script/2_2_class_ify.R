@@ -44,7 +44,6 @@ colNominal.needBinEnc <- colNominal.needBinEnc[colNominal.needBinEnc != "Product
 # remove Product_Info_2
 dt.imputed.combine[, Product_Info_2 := NULL]
 colNominal <- colNominal[colNominal != "Product_Info_2"]
-
 # # add to colNominal
 # colNominal.newBinEnc <- as.character()
 # # binary encoded cols
@@ -58,7 +57,7 @@ colNominal <- colNominal[colNominal != "Product_Info_2"]
 #     colNominal.newBinEnc <- c(colNominal.newBinEnc, names(dt.imputed.combine)[grep(col, names(dt.imputed.combine))])
 # }
 # colNominal <- c(colNominal, colNominal.newBinEnc)
-# remove colNominal.needBinEnc from colNominal
+# # remove colNominal.needBinEnc from colNominal
 # colNominal <- colNominal[!colNominal %in% colNominal.needBinEnc]
 # add to colNominal
 colNominal <- c(colNominal, "Product_Info_2_A", "Product_Info_2_B", "Product_Info_2_C", "Product_Info_2_D"

@@ -70,16 +70,33 @@ plot(tsne.out$Y, col = dt.class.ified.combine[dt.class.ified.combine$Response !=
 
 mx.tsne.out <- tsne.out$Y
 save(mx.tsne.out, file = "data/data_meta/dt_tsne.RData")
+load("data/data_meta/dt_tsne.RData")
 dt.class.ified.combine[, tsne_1 := mx.tsne.out[, 1]]
 dt.class.ified.combine[, tsne_2 := mx.tsne.out[, 2]]
 colContinuous <- c(colContinuous, "tsne_1", "tsne_2")
 
 ############################################################################################
-## 7.0 log #################################################################################
+## 7.0 classDist ###########################################################################
 ############################################################################################
+mx.class.ified.combine <- model.matrix(Response ~., dt.class.ified.combine[, !c("Id", "isTest"), with = F])[, -1]
+centroids <- classDist(dt.imputed.combine[, !c("Id", "isTest", "Response"), with = F], as.factor(dt.imputed.combine$Response))
 
 ############################################################################################
-## 8.0 save ################################################################################
+## 8.0 BMI and Age #########################################################################
+############################################################################################
+dt.class.ified.combine[, Age_BMI := Ins_Age * BMI]
+colContinuous <- c(colContinuous, "Age_BMI")
+
+############################################################################################
+## 9.0 Med_Keywords_Count ##################################################################
+############################################################################################
+colname.medKeywords <- names(dt.class.ified.combine)[grepl("Medical_Keyword_", names(dt.class.ified.combine))]
+dt.medKeywords <- dt.class.ified.combine[, colname.medKeywords, with = F][, lapply(.SD, as.integer)]
+dt.class.ified.combine[, Med_Keywords_Count := rowSums(dt.medKeywords) - 48]
+colDiscrete <- c(colDiscrete, "Med_Keywords_Count")
+
+############################################################################################
+## 9.0 save ################################################################################
 ############################################################################################
 dt.featureEngineed.combine <- dt.class.ified.combine
 save(dt.featureEngineed.combine, colNominal, colDiscrete, colContinuous, file = "data/data_enginee/dt_featureEngineed_combine.RData")

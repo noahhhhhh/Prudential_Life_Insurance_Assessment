@@ -82,29 +82,31 @@ colDiscrete <- colDiscrete[!colDiscrete %in% c("Medical_History_10", "Medical_Hi
 
 # impute Medical History 15
 # impute Medical History 15 as median (version 1)
-med.Medical_History_15 <- median(dt.raw.combine$Medical_History_15, na.rm = T)
-dt.raw.combine[, Medical_History_15_Impute_Median := ifelse(is.na(dt.raw.combine$Medical_History_15), med.Medical_History_15, dt.raw.combine$Medical_History_15)]
+# med.Medical_History_15 <- median(dt.raw.combine$Medical_History_15, na.rm = T)
+# dt.raw.combine[, Medical_History_15_Impute_Median := ifelse(is.na(dt.raw.combine$Medical_History_15), med.Medical_History_15, dt.raw.combine$Medical_History_15)]
 # impute Medical History 15 as a very large number 2016 (version 2)
-# dt.raw.combine[, Medical_History_15_Impute_2016 := ifelse(is.na(dt.raw.combine$Medical_History_15), 2016, dt.raw.combine$Medical_History_15)]
+dt.raw.combine[, Medical_History_15_Impute_1 := ifelse(is.na(dt.raw.combine$Medical_History_15), -1, dt.raw.combine$Medical_History_15)]
 # remove Medical History 15 now
 dt.raw.combine[, Medical_History_15 := NULL]
 # remove from colDiscrete
 colDiscrete <- colDiscrete[colDiscrete != "Medical_History_15"]
 # add to colDiscrete
-colDiscrete <- c(colDiscrete, "Medical_History_15_Impute_Median")
+# colDiscrete <- c(colDiscrete, "Medical_History_15_Impute_Median")
+colDiscrete <- c(colDiscrete, "Medical_History_15_Impute_1")
 
 # impute Medical History 1
 # impute Medical History 1 as median (version 1)
-med.Medical_History_1 <- median(dt.raw.combine$Medical_History_1, na.rm = T)
-dt.raw.combine[, Medical_History_1_Impute_Median := ifelse(is.na(dt.raw.combine$Medical_History_1), med.Medical_History_1, dt.raw.combine$Medical_History_1)]
+# med.Medical_History_1 <- median(dt.raw.combine$Medical_History_1, na.rm = T)
+# dt.raw.combine[, Medical_History_1_Impute_Median := ifelse(is.na(dt.raw.combine$Medical_History_1), med.Medical_History_1, dt.raw.combine$Medical_History_1)]
 # impute Medical History 1 as a very large number 2016 (version 2)
-# dt.raw.combine[, Medical_History_1_Impute_2016 := ifelse(is.na(dt.raw.combine$Medical_History_1), 2016, dt.raw.combine$Medical_History_1)]
+dt.raw.combine[, Medical_History_1_Impute_1 := ifelse(is.na(dt.raw.combine$Medical_History_1), -1, dt.raw.combine$Medical_History_1)]
 # remove Medical History 1 now
 dt.raw.combine[, Medical_History_1 := NULL]
 # remove from colDiscrete
 colDiscrete <- colDiscrete[colDiscrete != "Medical_History_1"]
 # add to colDiscrete
-colDiscrete <- c(colDiscrete, "Medical_History_1_Impute_Median")
+# colDiscrete <- c(colDiscrete, "Medical_History_1_Impute_Median")
+colDiscrete <- c(colDiscrete, "Medical_History_1_Impute_1")
 
 ## impute continual NAs features
 colnames.continuous.NAs <- intersect(colContinuous, colnames.colNAs)
@@ -125,38 +127,38 @@ dt.raw.combine$NewFeature1 <- ifelse(dt.raw.combine$Family_Hist_3>=0 & is.na(dt.
 dt.raw.combine$NewFeature1[is.na(dt.raw.combine$NewFeature1)] <- -1
 colNominal <- c("NewFeature1", colNominal)
 
-# impute as median (version 1)
-median.Employment_Info_1 <- median(dt.raw.combine$Employment_Info_1, na.rm = T)
-median.Employment_Info_4 <- median(dt.raw.combine$Employment_Info_4, na.rm = T)
-median.Employment_Info_6 <- median(dt.raw.combine$Employment_Info_6, na.rm = T)
-median.Insurance_History_5 <- median(dt.raw.combine$Insurance_History_5, na.rm = T)
-median.Family_Hist_2 <- median(dt.raw.combine$Family_Hist_2, na.rm = T)
-median.Family_Hist_3 <- median(dt.raw.combine$Family_Hist_3, na.rm = T)
-median.Family_Hist_4 <- median(dt.raw.combine$Family_Hist_4, na.rm = T)
-median.Family_Hist_5 <- median(dt.raw.combine$Family_Hist_5, na.rm = T)
-
-dt.raw.combine[, Employment_Info_1_Impute_Median := ifelse(is.na(dt.raw.combine$Employment_Info_1), median.Employment_Info_1, dt.raw.combine$Employment_Info_1)]
-dt.raw.combine[, Employment_Info_4_Impute_Median := ifelse(is.na(dt.raw.combine$Employment_Info_4), median.Employment_Info_4, dt.raw.combine$Employment_Info_4)]
-dt.raw.combine[, Employment_Info_6_Impute_Median := ifelse(is.na(dt.raw.combine$Employment_Info_6), median.Employment_Info_6, dt.raw.combine$Employment_Info_6)]
-dt.raw.combine[, Insurance_History_5_Impute_Median := ifelse(is.na(dt.raw.combine$Insurance_History_5), median.Insurance_History_5, dt.raw.combine$Insurance_History_5)]
-dt.raw.combine[, Family_Hist_2_Impute_Median := ifelse(is.na(dt.raw.combine$Family_Hist_2), median.Family_Hist_2, dt.raw.combine$Family_Hist_2)]
-dt.raw.combine[, Family_Hist_3_Impute_Median := ifelse(is.na(dt.raw.combine$Family_Hist_3), median.Family_Hist_3, dt.raw.combine$Family_Hist_3)]
-dt.raw.combine[, Family_Hist_4_Impute_Median := ifelse(is.na(dt.raw.combine$Family_Hist_4), median.Family_Hist_4, dt.raw.combine$Family_Hist_4)]
-dt.raw.combine[, Family_Hist_5_Impute_Median := ifelse(is.na(dt.raw.combine$Family_Hist_5), median.Family_Hist_5, dt.raw.combine$Family_Hist_5)]
-# add to colContinuous
-colContinuous <- c(colContinuous, "Employment_Info_1_Impute_Median", "Employment_Info_4_Impute_Median", "Employment_Info_6_Impute_Median"
-                   , "Insurance_History_5_Impute_Median", "Family_Hist_2_Impute_Median", "Family_Hist_3_Impute_Median"
-                   , "Family_Hist_4_Impute_Median", "Family_Hist_5_Impute_Median")
+# # impute as median (version 1)
+# median.Employment_Info_1 <- median(dt.raw.combine$Employment_Info_1, na.rm = T)
+# median.Employment_Info_4 <- median(dt.raw.combine$Employment_Info_4, na.rm = T)
+# median.Employment_Info_6 <- median(dt.raw.combine$Employment_Info_6, na.rm = T)
+# median.Insurance_History_5 <- median(dt.raw.combine$Insurance_History_5, na.rm = T)
+# median.Family_Hist_2 <- median(dt.raw.combine$Family_Hist_2, na.rm = T)
+# median.Family_Hist_3 <- median(dt.raw.combine$Family_Hist_3, na.rm = T)
+# median.Family_Hist_4 <- median(dt.raw.combine$Family_Hist_4, na.rm = T)
+# median.Family_Hist_5 <- median(dt.raw.combine$Family_Hist_5, na.rm = T)
+# 
+# dt.raw.combine[, Employment_Info_1_Impute_Median := ifelse(is.na(dt.raw.combine$Employment_Info_1), median.Employment_Info_1, dt.raw.combine$Employment_Info_1)]
+# dt.raw.combine[, Employment_Info_4_Impute_Median := ifelse(is.na(dt.raw.combine$Employment_Info_4), median.Employment_Info_4, dt.raw.combine$Employment_Info_4)]
+# dt.raw.combine[, Employment_Info_6_Impute_Median := ifelse(is.na(dt.raw.combine$Employment_Info_6), median.Employment_Info_6, dt.raw.combine$Employment_Info_6)]
+# dt.raw.combine[, Insurance_History_5_Impute_Median := ifelse(is.na(dt.raw.combine$Insurance_History_5), median.Insurance_History_5, dt.raw.combine$Insurance_History_5)]
+# dt.raw.combine[, Family_Hist_2_Impute_Median := ifelse(is.na(dt.raw.combine$Family_Hist_2), median.Family_Hist_2, dt.raw.combine$Family_Hist_2)]
+# dt.raw.combine[, Family_Hist_3_Impute_Median := ifelse(is.na(dt.raw.combine$Family_Hist_3), median.Family_Hist_3, dt.raw.combine$Family_Hist_3)]
+# dt.raw.combine[, Family_Hist_4_Impute_Median := ifelse(is.na(dt.raw.combine$Family_Hist_4), median.Family_Hist_4, dt.raw.combine$Family_Hist_4)]
+# dt.raw.combine[, Family_Hist_5_Impute_Median := ifelse(is.na(dt.raw.combine$Family_Hist_5), median.Family_Hist_5, dt.raw.combine$Family_Hist_5)]
+# # add to colContinuous
+# colContinuous <- c(colContinuous, "Employment_Info_1_Impute_Median", "Employment_Info_4_Impute_Median", "Employment_Info_6_Impute_Median"
+#                    , "Insurance_History_5_Impute_Median", "Family_Hist_2_Impute_Median", "Family_Hist_3_Impute_Median"
+#                    , "Family_Hist_4_Impute_Median", "Family_Hist_5_Impute_Median")
 
 # # impute as a very large number 1 (version 2)
-dt.raw.combine[, Employment_Info_1_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_1), 1, dt.raw.combine$Employment_Info_1)]
-dt.raw.combine[, Employment_Info_4_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_4), 1, dt.raw.combine$Employment_Info_4)]
-dt.raw.combine[, Employment_Info_6_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_6), 1, dt.raw.combine$Employment_Info_6)]
-dt.raw.combine[, Insurance_History_5_Impute_1 := ifelse(is.na(dt.raw.combine$Insurance_History_5), 1, dt.raw.combine$Insurance_History_5)]
-dt.raw.combine[, Family_Hist_2_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_2), 1, dt.raw.combine$Family_Hist_2)]
-dt.raw.combine[, Family_Hist_3_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_3), 1, dt.raw.combine$Family_Hist_3)]
-dt.raw.combine[, Family_Hist_4_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_4), 1, dt.raw.combine$Family_Hist_4)]
-dt.raw.combine[, Family_Hist_5_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_5), 1, dt.raw.combine$Family_Hist_5)]
+dt.raw.combine[, Employment_Info_1_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_1), -1, dt.raw.combine$Employment_Info_1)]
+dt.raw.combine[, Employment_Info_4_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_4), -1, dt.raw.combine$Employment_Info_4)]
+dt.raw.combine[, Employment_Info_6_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_6), -1, dt.raw.combine$Employment_Info_6)]
+dt.raw.combine[, Insurance_History_5_Impute_1 := ifelse(is.na(dt.raw.combine$Insurance_History_5), -1, dt.raw.combine$Insurance_History_5)]
+dt.raw.combine[, Family_Hist_2_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_2), -1, dt.raw.combine$Family_Hist_2)]
+dt.raw.combine[, Family_Hist_3_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_3), -1, dt.raw.combine$Family_Hist_3)]
+dt.raw.combine[, Family_Hist_4_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_4), -1, dt.raw.combine$Family_Hist_4)]
+dt.raw.combine[, Family_Hist_5_Impute_1 := ifelse(is.na(dt.raw.combine$Family_Hist_5), -1, dt.raw.combine$Family_Hist_5)]
 # # add to colContinuous
 colContinuous <- c(colContinuous, "Employment_Info_1_Impute_1", "Employment_Info_4_Impute_1", "Employment_Info_6_Impute_1"
                    , "Insurance_History_5_Impute_1", "Family_Hist_2_Impute_1", "Family_Hist_3_Impute_1"

@@ -22,6 +22,7 @@ The results will help Prudential better understand the predictive power of the d
 10. [09/01/2016 - **Done**] pca meta features (need dummy var)
 11. [12/01/2016 - **Not Done Yet**] try simple continuous variable transformation (cube, square, log)
 12. [30/01/2016 - **Not Done yet**] do tnse and near zero var and personalised fval
+13. [01/02/2016 - **Not Done yet**] do distance and try offset
 
 ## LOG
 1. I did 3 kinds of imputations (...Impute_Median/Impute_Mean; ...Impute_2016/Impute_1; simply remove the feature)
