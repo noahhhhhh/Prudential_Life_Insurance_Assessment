@@ -31,24 +31,26 @@ dim(dt.train); dim(dt.valid); dim(dt.test)
 # dim(dt.train)
 # dt.train <- Noise(dt.train, noise_l = 0, noise_u = .00005, col_excl = c(colNominal, "Id", "Response", "isTest"))
 # dim(dt.train)
-x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
+# x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
+x.train <- data.matrix(dt.train[, !c("Id", "isTest", "Response"), with = F])
 y.train <- dt.train$Response
 dmx.train <- xgb.DMatrix(data =  x.train, label = y.train)
 
-x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[, -1]
+# x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[, -1]
+x.valid <- data.matrix(dt.valid[, !c("Id", "isTest", "Response"), with = F])
 y.valid <- dt.valid$Response
 dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
 
-x.valid1 <- model.matrix(Response ~., dt.valid1[, !c("Id", "isTest"), with = F])[, -1]
-y.valid1 <- dt.valid1$Response
-dmx.valid1 <- xgb.DMatrix(data =  x.valid1, label = y.valid1)
+# x.valid1 <- model.matrix(Response ~., dt.valid1[, !c("Id", "isTest"), with = F])[, -1]
+# y.valid1 <- dt.valid1$Response
+# dmx.valid1 <- xgb.DMatrix(data =  x.valid1, label = y.valid1)
 
-x.valid2 <- model.matrix(Response ~., dt.valid2[, !c("Id", "isTest"), with = F])[, -1]
-y.valid2 <- dt.valid2$Response
-dmx.valid2 <- xgb.DMatrix(data =  x.valid2, label = y.valid2)
+# x.valid2 <- model.matrix(Response ~., dt.valid2[, !c("Id", "isTest"), with = F])[, -1]
+# y.valid2 <- dt.valid2$Response
+# dmx.valid2 <- xgb.DMatrix(data =  x.valid2, label = y.valid2)
 
-x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
-
+# x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
+x.test <- xgb.DMatrix(data = data.matrix(dt.test[, !c("Id", "isTest", "Response"), with = F]), label = rep(0, dim(dt.test)[1]))
 ################################
 ## 1.2 train ###################
 ################################
@@ -81,12 +83,14 @@ for(s in 1:15){
         set.seed(m * 8 + n * 64 + k * 512 + s * 1024)
         # dmx.train.fold
         dt.train.fold <- dt.train[folds != k]
-        x.train.fold <- model.matrix(Response ~., dt.train.fold[, !c("Id", "isTest"), with = F])[, -1]
+        # x.train.fold <- model.matrix(Response ~., dt.train.fold[, !c("Id", "isTest"), with = F])[, -1]
+        x.train.fold <- data.matrix(dt.train.fold[, !c("Id", "isTest", "Response"), with = F])
         y.train.fold <- dt.train.fold$Response
         dmx.train.fold <- xgb.DMatrix(data =  x.train.fold, label = y.train.fold)
         # dmx.valid.fold
         dt.valid.fold <- dt.train[folds == k]
-        x.valid.fold <- model.matrix(Response ~., dt.valid.fold[, !c("Id", "isTest"), with = F])[, -1]
+        # x.valid.fold <- model.matrix(Response ~., dt.valid.fold[, !c("Id", "isTest"), with = F])[, -1]
+        x.valid.fold <- data.matrix(dt.valid.fold[, !c("Id", "isTest", "Response"), with = F])
         y.valid.fold <- dt.valid.fold$Response
         dmx.valid.fold <- xgb.DMatrix(data =  x.valid.fold, label = y.valid.fold)
         # train
@@ -119,57 +123,25 @@ for(s in 1:15){
     pred.valid <- pred.valid / 3
     pred.test <- pred.test / 3
     
+    set.seed(m * 8 + n * 64 + k * 512 + s * 1024)
+    trainForOpt <- sample(length(pred.train), length(pred.train) * .8)
+    pred.train.forOpt <- pred.train[trainForOpt]
     cat("optimising the cuts on pred.train ...\n")
     SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
-        cuts <- c(min(pred.train), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train))
-        pred <- as.integer(cut2(pred.train, cuts))
-        err <- ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
+        cuts <- c(min(pred.train.forOpt), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train.forOpt))
+        pred <- as.integer(cut2(pred.train.forOpt, cuts))
+        err <- ScoreQuadraticWeightedKappa(pred, y.train[trainForOpt], 1, 8)
         return(-err)
     }
     optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
     optCuts
-#     for(i in 1:8){
-#         cuts <- as.numeric()
-#         pred <- as.integer()
-#         offset <- 0
-#         y.pred <- as.numeric()
-#         y <- as.numeric()
-#         err <- 0
-#         offsets <- as.numeric()
-#         
-#         offsetFun <- function(x = .1){
-#             cuts <- c(min(pred.train), seq(1.5, 7.5, by = 1), max(pred.train))
-#             pred <- as.integer(cut2(pred.train, cuts))
-#             offset <- x
-#             
-#             pred[pred == i] <- pred[pred == i] + offset
-#             y.pred <- as.integer(cut2(y.pred, cuts))
-#             
-#             err <- ScoreQuadraticWeightedKappa(pred, y.train)
-#             
-#             return(-err)
-#         }
-#         optOffset <- optim(.1, offsetFun, method = "Brent", lower = -8, upper = 8)
-#         offsets[i] <- optOffset$par
-#         
-#     }
-#     
-#     cuts <- c(min(pred.train), seq(1.5, 7.5, by = 1), max(pred.train))
-#     pred.valid.op <- as.integer(cut2(pred.valid, cuts))
-#     pred.test.op <- as.integer(cut2(pred.test, cuts))
-#     for(j in 1:8){
-#         pred.valid[pred.valid.op == j] <- pred.valid[pred.valid.op == j] + offsets[j]
-#         pred.test[pred.test.op == j] <- pred.test[pred.test.op == j] + offset[j]
-#     }
-#     pred.valid.op <- as.integer(cut2(pred.valid, cuts))
-#     pred.test.op <- as.integer(cut2(pred.test, cuts))
-#     print(paste("loop", s, ": valid score -", ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)))
-#     
+
     cat("applying optCuts on valid ...\n")
     cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
     pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
     print(paste("loop", s, ": valid score -", ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)))
-    # [1] "loop 1 : valid score - 0.662693668247028" ()
+    # [1] "loop 1 : valid score - 0.662693668247028" (-1 as impute)
+    # [1] "loop 1 : valid score - 0.664..." (-1 as impute plus all engineed features)
     
     cat("applying optCuts on test ...\n")
     cuts.test <- c(min(pred.test), optCuts$par, max(pred.test))
@@ -230,7 +202,8 @@ score
 # 0.6603385 with square and cube Age, Wt, Ht, and BMI
 # 0.6606217 with tsne and NewFeature1
 # 0.6589659 raw with binary encode
-# 0.6640989 with -1 as the impute and all engineed features (lb 0.66857) *
+# 0.6640989 with -1 as the impute and all engineed features (lb 0.66857)
+# 0.6633673 same as above but 80% of training set used to train optCuts (lb 0.66944) *
 
 ################################
 ## 1.3 submit ##################
@@ -243,7 +216,7 @@ table(submission$Response)
 
 # 1    2    3    4    5    6    7    8 
 # 1663 1127 1419 1632 2193 2539 3648 5544
-write.csv(submission, "submit/011_xgb_poisson_recv_with_all_features.csv", row.names = FALSE) # 0.6601923 (highest) (LB 0.66819) *
+write.csv(submission, "submit/011_xgb_poisson_recv_with_all_features.csv", row.names = FALSE) # 0.6601923 (highest) (LB 0.66819)
 write.csv(submission, "submit/013_xgb_poisson_recv_with_all_features_excl_impute_1.csv", row.names = FALSE) # 0.6601923 (LB 0.66719)
 write.csv(submission, "submit/014_xgb_poisson_recv_with_raw_features_excl_impute_1.csv", row.names = FALSE) # 0.6592457 (LB 0.66677)
 write.csv(submission, "submit/015_xgb_poisson_recv_with_raw_features_incl_impute_1_2016_with_kmeans_meta_features.csv", row.names = FALSE) # 0.6608228 (highest) (LB 0.66667)
@@ -251,7 +224,9 @@ write.csv(submission, "submit/016_xgb_poisson_recv_with_raw_features_incl_impute
 write.csv(submission, "submit/017_xgb_poisson_recv_with_square_cube_transform.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
 write.csv(submission, "submit/018_xgb_poisson_recv_with_tsne_and_newfeature1.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
 write.csv(submission, "submit/019_xgb_poisson_recv_with_binary_encode.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
-write.csv(submission, "submit/020_xgb_poisson_recv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
+write.csv(submission, "submit/020_xgb_poisson_recv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6640989 (LB 0.66857) *
+write.csv(submission, "submit/021_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6640989 (LB 0.66857) *
+write.csv(submission, "submit/022_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_08percent_optcuts.csv", row.names = FALSE) # 0.6640989 (LB 0.66857) *
 
 
 

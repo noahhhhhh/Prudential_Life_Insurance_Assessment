@@ -78,8 +78,8 @@ colContinuous <- c(colContinuous, "tsne_1", "tsne_2")
 ############################################################################################
 ## 7.0 classDist ###########################################################################
 ############################################################################################
-mx.class.ified.combine <- model.matrix(Response ~., dt.class.ified.combine[, !c("Id", "isTest"), with = F])[, -1]
-centroids <- classDist(dt.imputed.combine[, !c("Id", "isTest", "Response"), with = F], as.factor(dt.imputed.combine$Response))
+mx.class.ified.combine <- data.matrix(dt.class.ified.combine[, !c("Id", "isTest", "Response"), with = F])[, -1]
+centroids <- classDist(mx.class.ified.combine, as.factor(dt.class.ified.combine$Response))
 
 ############################################################################################
 ## 8.0 BMI and Age #########################################################################
