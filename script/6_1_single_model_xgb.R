@@ -17,7 +17,7 @@ require(xgboost)
 require(Ckmeans.1d.dp)
 cat("prepare train, valid, and test data set...\n")
 set.seed(888)
-ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F) # remember to change it to .66
+ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .8, list = F) # remember to change it to .66
 dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
 dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
 set.seed(888)
@@ -72,6 +72,13 @@ ls.pred.valid.op <- list()
 ls.pred.test.op <- list()
 ls.optCuts <- list()
 
+evalerror <- function(preds, dtrain){
+    labels <- getinfo(dtrain, "label")
+    err <- ScoreQuadraticWeightedKappa(labels,round(preds))
+    
+    return(list(metric = "kappa", value = err))
+}
+
 cat("training ...\n")
 for(s in 1:15){
     # set up a score metric for folds
@@ -105,10 +112,12 @@ for(s in 1:15){
                                                 , max_depth = 8
                                                 , subsample = .8
                                                 , colsample_bytree = .8
-                                                , metrics = "rmse"
+                                                # , metrics = "rmse"
                                 )
+                                , feval = evalerror #
                                 , early.stop.round = 100
-                                , maximize = F
+                                # , maximize = F
+                                , maximize = T
                                 , print.every.n = 150
                                 , nrounds = 18000
                                 , watchlist = list(valid = dmx.valid.fold, train = dmx.train.fold)
@@ -204,7 +213,8 @@ score
 # 0.6589659 raw with binary encode
 # 0.6640989 with -1 as the impute and all engineed features (lb 0.66857)
 # 0.6633673 same as above but 80% of training set used to train optCuts (lb 0.66944)
-# 0.6645372 same as above but with dummy vars (lb 0.66953) *
+# 0.6645372 same as above but with dummy vars (lb 0.66953)
+# 0.6578306 same as above but with 80% train and 20% valid (lb 0.67114) *
 
 ################################
 ## 1.3 submit ##################
@@ -228,7 +238,8 @@ write.csv(submission, "submit/019_xgb_poisson_recv_with_binary_encode.csv", row.
 write.csv(submission, "submit/020_xgb_poisson_recv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6640989 (LB 0.66857) *
 write.csv(submission, "submit/021_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6640989 (LB 0.66857) *
 write.csv(submission, "submit/022_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_08percent_optcuts.csv", row.names = FALSE) # 0.6645372 (LB 0.66944) *
-write.csv(submission, "submit/023_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts.csv", row.names = FALSE) # 0.6645372 (LB 0.66953) *
+write.csv(submission, "submit/023_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts.csv", row.names = FALSE) # 0.6645372 (LB 0.66953)
+write.csv(submission, "submit/024_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts.csv", row.names = FALSE) # 0.6578306 (LB 0.67114) *
 
 
 
