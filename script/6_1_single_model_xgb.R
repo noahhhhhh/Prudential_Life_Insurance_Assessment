@@ -31,13 +31,13 @@ dim(dt.train); dim(dt.valid); dim(dt.test)
 # dim(dt.train)
 # dt.train <- Noise(dt.train, noise_l = 0, noise_u = .00005, col_excl = c(colNominal, "Id", "Response", "isTest"))
 # dim(dt.train)
-# x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
-x.train <- data.matrix(dt.train[, !c("Id", "isTest", "Response"), with = F])
+x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
+# x.train <- data.matrix(dt.train[, !c("Id", "isTest", "Response"), with = F])
 y.train <- dt.train$Response
 dmx.train <- xgb.DMatrix(data =  x.train, label = y.train)
 
-# x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[, -1]
-x.valid <- data.matrix(dt.valid[, !c("Id", "isTest", "Response"), with = F])
+x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[, -1]
+# x.valid <- data.matrix(dt.valid[, !c("Id", "isTest", "Response"), with = F])
 y.valid <- dt.valid$Response
 dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
 
@@ -49,8 +49,8 @@ dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
 # y.valid2 <- dt.valid2$Response
 # dmx.valid2 <- xgb.DMatrix(data =  x.valid2, label = y.valid2)
 
-# x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
-x.test <- xgb.DMatrix(data = data.matrix(dt.test[, !c("Id", "isTest", "Response"), with = F]), label = rep(0, dim(dt.test)[1]))
+x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
+# x.test <- xgb.DMatrix(data = data.matrix(dt.test[, !c("Id", "isTest", "Response"), with = F]), label = rep(0, dim(dt.test)[1]))
 ################################
 ## 1.2 train ###################
 ################################
@@ -83,14 +83,14 @@ for(s in 1:15){
         set.seed(m * 8 + n * 64 + k * 512 + s * 1024)
         # dmx.train.fold
         dt.train.fold <- dt.train[folds != k]
-        # x.train.fold <- model.matrix(Response ~., dt.train.fold[, !c("Id", "isTest"), with = F])[, -1]
-        x.train.fold <- data.matrix(dt.train.fold[, !c("Id", "isTest", "Response"), with = F])
+        x.train.fold <- model.matrix(Response ~., dt.train.fold[, !c("Id", "isTest"), with = F])[, -1]
+        # x.train.fold <- data.matrix(dt.train.fold[, !c("Id", "isTest", "Response"), with = F])
         y.train.fold <- dt.train.fold$Response
         dmx.train.fold <- xgb.DMatrix(data =  x.train.fold, label = y.train.fold)
         # dmx.valid.fold
         dt.valid.fold <- dt.train[folds == k]
-        # x.valid.fold <- model.matrix(Response ~., dt.valid.fold[, !c("Id", "isTest"), with = F])[, -1]
-        x.valid.fold <- data.matrix(dt.valid.fold[, !c("Id", "isTest", "Response"), with = F])
+        x.valid.fold <- model.matrix(Response ~., dt.valid.fold[, !c("Id", "isTest"), with = F])[, -1]
+        # x.valid.fold <- data.matrix(dt.valid.fold[, !c("Id", "isTest", "Response"), with = F])
         y.valid.fold <- dt.valid.fold$Response
         dmx.valid.fold <- xgb.DMatrix(data =  x.valid.fold, label = y.valid.fold)
         # train
@@ -203,7 +203,8 @@ score
 # 0.6606217 with tsne and NewFeature1
 # 0.6589659 raw with binary encode
 # 0.6640989 with -1 as the impute and all engineed features (lb 0.66857)
-# 0.6633673 same as above but 80% of training set used to train optCuts (lb 0.66944) *
+# 0.6633673 same as above but 80% of training set used to train optCuts (lb 0.66944)
+# 0.6645372 same as above but with dummy vars (lb 0.66953) *
 
 ################################
 ## 1.3 submit ##################
@@ -226,7 +227,8 @@ write.csv(submission, "submit/018_xgb_poisson_recv_with_tsne_and_newfeature1.csv
 write.csv(submission, "submit/019_xgb_poisson_recv_with_binary_encode.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
 write.csv(submission, "submit/020_xgb_poisson_recv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6640989 (LB 0.66857) *
 write.csv(submission, "submit/021_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6640989 (LB 0.66857) *
-write.csv(submission, "submit/022_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_08percent_optcuts.csv", row.names = FALSE) # 0.6640989 (LB 0.66857) *
+write.csv(submission, "submit/022_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_08percent_optcuts.csv", row.names = FALSE) # 0.6645372 (LB 0.66944) *
+write.csv(submission, "submit/023_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts.csv", row.names = FALSE) # 0.6645372 (LB 0.66953) *
 
 
 
