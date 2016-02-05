@@ -108,7 +108,7 @@ for(s in 1:15){
                                 # , objective = "reg:linear"
                                 , params = list(nthread = 8
                                                 , eta = .025
-                                                , min_child_weight = 20
+                                                , min_child_weight = 100
                                                 , max_depth = 8
                                                 , subsample = .8
                                                 , colsample_bytree = .8
@@ -215,6 +215,7 @@ score
 # 0.6633673 same as above but 80% of training set used to train optCuts (lb 0.66944)
 # 0.6645372 same as above but with dummy vars (lb 0.66953)
 # 0.6578306 same as above but with 80% train and 20% valid (lb 0.67114) *
+# 0.6576221 same as above but with product_2_num (lb 0.67109)
 
 ################################
 ## 1.3 submit ##################
@@ -240,6 +241,7 @@ write.csv(submission, "submit/021_xgb_poisson_benchmark_para_cv_with_impute_1_an
 write.csv(submission, "submit/022_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_08percent_optcuts.csv", row.names = FALSE) # 0.6645372 (LB 0.66944) *
 write.csv(submission, "submit/023_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts.csv", row.names = FALSE) # 0.6645372 (LB 0.66953)
 write.csv(submission, "submit/024_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts.csv", row.names = FALSE) # 0.6578306 (LB 0.67114) *
+write.csv(submission, "submit/025_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num.csv", row.names = FALSE) # 0.6578306 (LB 0.67114) *
 
 
 

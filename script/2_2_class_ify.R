@@ -32,6 +32,7 @@ dt.imputed.combine[, Product_Info_2_D := ifelse(grepl("D", dt.imputed.combine$Pr
 dt.imputed.combine[, Product_Info_2_E := ifelse(grepl("E", dt.imputed.combine$Product_Info_2), 1, 0)]
 
 dt.imputed.combine[, Product_Info_2_Num := as.factor(substr(dt.imputed.combine$Product_Info_2, 2, 2))]
+dt.imputed.combine[, Product_Info_2_1 := ifelse(grepl("1", dt.imputed.combine$Product_Info_2), 1, 0)]
 
 # now start handling the no. of levels > 3
 dt.imputed.combine <- ConvertNonNumFactorToNumFactor(dt.imputed.combine, "Product_Info_2")
@@ -61,7 +62,7 @@ colNominal <- colNominal[colNominal != "Product_Info_2"]
 # colNominal <- colNominal[!colNominal %in% colNominal.needBinEnc]
 # add to colNominal
 colNominal <- c(colNominal, "Product_Info_2_A", "Product_Info_2_B", "Product_Info_2_C", "Product_Info_2_D"
-                , "Product_Info_2_E", "Product_Info_2_Num")
+                , "Product_Info_2_E", "Product_Info_2_Num", "Product_Info_2_1")
 
 ##############################
 ## 1.1.2 no. of levels == 2 ##
