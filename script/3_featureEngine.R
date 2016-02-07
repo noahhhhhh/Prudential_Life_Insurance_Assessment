@@ -54,11 +54,38 @@ dt.class.ified.combine[, BNI_3 := BMI ^ 3]
 colContinuous <- c(colContinuous, "Ins_Age_3", "Ht_3", "Wt_3", "BNI_3")
 
 ############################################################################################
-## 6.0 t-sne ###############################################################################
+## 6.0 BMI and Age #########################################################################
 ############################################################################################
+dt.class.ified.combine[, Age_BMI := Ins_Age * BMI]
+colContinuous <- c(colContinuous, "Age_BMI")
+
+############################################################################################
+## 7.0 Med_Keywords_Count ##################################################################
+############################################################################################
+colname.medKeywords <- names(dt.class.ified.combine)[grepl("Medical_Keyword_", names(dt.class.ified.combine))]
+dt.medKeywords <- dt.class.ified.combine[, colname.medKeywords, with = F][, lapply(.SD, as.integer)]
+dt.class.ified.combine[, Med_Keywords_Count := rowSums(dt.medKeywords) - 48]
+colDiscrete <- c(colDiscrete, "Med_Keywords_Count")
+
+############################################################################################
+## 8.0 classDist ###########################################################################
+############################################################################################
+mx.class.ified.combine <- data.matrix(dt.class.ified.combine[, !c("Id", "isTest", "Response"), with = F])[, -1]
+centroids <- classDist(mx.class.ified.combine, as.factor(dt.class.ified.combine$Response))
+
+############################################################################################
+## 9.0 t-sne ###############################################################################
+############################################################################################
+## scale
+prep.class.ified.combine <- preProcess(dt.class.ified.combine[, !c("Id", "Response", "isTest"), with = F]
+                                       # , method = c("range")
+                                       , method = c("center", "scale")
+                                       , verbose = T)
+dt.class.ified.combine.scale <- predict(prep.class.ified.combine, dt.class.ified.combine)
+## t-sne
 require(Rtsne)
-mx.class.ified.combine <- model.matrix(Response ~., mx.class.ified.combine <- dt.class.ified.combine[, !c("Id", "isTest"), with = F])[, -1]
-tsne.out <- Rtsne(mx.class.ified.combine
+mx.class.ified.combine.scale <- data.matrix(dt.class.ified.combine.scale[, !c("Id", "isTest", "Response"), with = F])
+tsne.out <- Rtsne(mx.class.ified.combine.scale
                   , check_duplicates = F
                   , pca = F
                   , verbose = T
@@ -74,26 +101,6 @@ load("data/data_meta/dt_tsne.RData")
 dt.class.ified.combine[, tsne_1 := mx.tsne.out[, 1]]
 dt.class.ified.combine[, tsne_2 := mx.tsne.out[, 2]]
 colContinuous <- c(colContinuous, "tsne_1", "tsne_2")
-
-############################################################################################
-## 7.0 classDist ###########################################################################
-############################################################################################
-mx.class.ified.combine <- data.matrix(dt.class.ified.combine[, !c("Id", "isTest", "Response"), with = F])[, -1]
-centroids <- classDist(mx.class.ified.combine, as.factor(dt.class.ified.combine$Response))
-
-############################################################################################
-## 8.0 BMI and Age #########################################################################
-############################################################################################
-dt.class.ified.combine[, Age_BMI := Ins_Age * BMI]
-colContinuous <- c(colContinuous, "Age_BMI")
-
-############################################################################################
-## 9.0 Med_Keywords_Count ##################################################################
-############################################################################################
-colname.medKeywords <- names(dt.class.ified.combine)[grepl("Medical_Keyword_", names(dt.class.ified.combine))]
-dt.medKeywords <- dt.class.ified.combine[, colname.medKeywords, with = F][, lapply(.SD, as.integer)]
-dt.class.ified.combine[, Med_Keywords_Count := rowSums(dt.medKeywords) - 48]
-colDiscrete <- c(colDiscrete, "Med_Keywords_Count")
 
 ############################################################################################
 ## 9.0 save ################################################################################

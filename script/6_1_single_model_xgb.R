@@ -86,53 +86,53 @@ for(s in 1:15){
     pred.valid <- rep(0, dim(dt.valid)[1])
     pred.test <- rep(0, dim(dt.test)[1])
     
-    for(k in 1:3){ # folds
-        set.seed(m * 8 + n * 64 + k * 512 + s * 1024)
-        # dmx.train.fold
-        dt.train.fold <- dt.train[folds != k]
-        x.train.fold <- model.matrix(Response ~., dt.train.fold[, !c("Id", "isTest"), with = F])[, -1]
-        # x.train.fold <- data.matrix(dt.train.fold[, !c("Id", "isTest", "Response"), with = F])
-        y.train.fold <- dt.train.fold$Response
-        dmx.train.fold <- xgb.DMatrix(data =  x.train.fold, label = y.train.fold)
-        # dmx.valid.fold
-        dt.valid.fold <- dt.train[folds == k]
-        x.valid.fold <- model.matrix(Response ~., dt.valid.fold[, !c("Id", "isTest"), with = F])[, -1]
-        # x.valid.fold <- data.matrix(dt.valid.fold[, !c("Id", "isTest", "Response"), with = F])
-        y.valid.fold <- dt.valid.fold$Response
-        dmx.valid.fold <- xgb.DMatrix(data =  x.valid.fold, label = y.valid.fold)
-        # train
-        set.seed(m * 8 + n * 64 + k * 512 + s * 1024)
-        cv.xgb.out <- xgb.train(data = dmx.train.fold
-                                , booster = "gbtree"
-                                , objective = "count:poisson"
-                                # , objective = "reg:linear"
-                                , params = list(nthread = 8
-                                                , eta = .025
-                                                , min_child_weight = 100
-                                                , max_depth = 8
-                                                , subsample = .8
-                                                , colsample_bytree = .8
-                                                # , metrics = "rmse"
-                                )
-                                , feval = evalerror #
-                                , early.stop.round = 100
-                                # , maximize = F
-                                , maximize = T
-                                , print.every.n = 150
-                                , nrounds = 18000
-                                , watchlist = list(valid = dmx.valid.fold, train = dmx.train.fold)
-                                , verbose = T
-        )
-        pred.train <- pred.train + predict(cv.xgb.out, dmx.train)
-        pred.valid <- pred.valid + predict(cv.xgb.out, dmx.valid)
-        pred.test <- pred.test + predict(cv.xgb.out, x.test)
-    }
+    # for(k in 1:3){ # folds
+    #         set.seed(m * 8 + n * 64 + k * 512 + s * 1024)
+    #         # dmx.train.fold
+    #         dt.train.fold <- dt.train[folds != k]
+    #         x.train.fold <- model.matrix(Response ~., dt.train.fold[, !c("Id", "isTest"), with = F])[, -1]
+    #         # x.train.fold <- data.matrix(dt.train.fold[, !c("Id", "isTest", "Response"), with = F])
+    #         y.train.fold <- dt.train.fold$Response
+    #         dmx.train.fold <- xgb.DMatrix(data =  x.train.fold, label = y.train.fold)
+    #         # dmx.valid.fold
+    #         dt.valid.fold <- dt.train[folds == k]
+    #         x.valid.fold <- model.matrix(Response ~., dt.valid.fold[, !c("Id", "isTest"), with = F])[, -1]
+    #         # x.valid.fold <- data.matrix(dt.valid.fold[, !c("Id", "isTest", "Response"), with = F])
+    #         y.valid.fold <- dt.valid.fold$Response
+    #         dmx.valid.fold <- xgb.DMatrix(data =  x.valid.fold, label = y.valid.fold)
+    # train
+    set.seed(m * 8 + n * 64 + s * 1024)
+    cv.xgb.out <- xgb.train(data = dmx.train
+                            , booster = "gbtree"
+                            , objective = "count:poisson"
+                            # , objective = "reg:linear"
+                            , params = list(nthread = 8
+                                            , eta = .025
+                                            , min_child_weight = 100
+                                            , max_depth = 8
+                                            , subsample = .8
+                                            , colsample_bytree = .8
+                                            # , metrics = "rmse"
+                            )
+                            , feval = evalerror #
+                            , early.stop.round = 100
+                            # , maximize = F
+                            , maximize = T
+                            , print.every.n = 150
+                            , nrounds = 18000
+                            , watchlist = list(valid = dmx.valid, train = dmx.train)
+                            , verbose = T
+    )
+    pred.train <- predict(cv.xgb.out, dmx.train)
+    pred.valid <- predict(cv.xgb.out, dmx.valid)
+    pred.test <- predict(cv.xgb.out, x.test)
+    # }
     
-    pred.train <- pred.train / 3
-    pred.valid <- pred.valid / 3
-    pred.test <- pred.test / 3
+    #     pred.train <- pred.train / 3
+    #     pred.valid <- pred.valid / 3
+    #     pred.test <- pred.test / 3
     
-    set.seed(m * 8 + n * 64 + k * 512 + s * 1024)
+    set.seed(m * 8 + n * 64 + s * 1024)
     trainForOpt <- sample(length(pred.train), length(pred.train) * .8)
     pred.train.forOpt <- pred.train[trainForOpt]
     cat("optimising the cuts on pred.train ...\n")
@@ -144,7 +144,7 @@ for(s in 1:15){
     }
     optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
     optCuts
-
+    
     cat("applying optCuts on valid ...\n")
     cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
     pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
@@ -214,8 +214,11 @@ score
 # 0.6640989 with -1 as the impute and all engineed features (lb 0.66857)
 # 0.6633673 same as above but 80% of training set used to train optCuts (lb 0.66944)
 # 0.6645372 same as above but with dummy vars (lb 0.66953)
-# 0.6578306 same as above but with 80% train and 20% valid (lb 0.67114) *
+# 0.6578306 same as above but with 80% train and 20% valid (lb 0.67114)
 # 0.6576221 same as above but with product_2_num (lb 0.67109)
+# 0.6576881 sane as above but with product_2_1 and without group features (lb 0.67045)
+# 0.6565563 same as above but with group features (all engineed features) and 100 min_child_weight (lb 0.67343)
+# 0.6574313 same as above but with tsne (lb 0.67426) *
 
 ################################
 ## 1.3 submit ##################
@@ -236,12 +239,15 @@ write.csv(submission, "submit/016_xgb_poisson_recv_with_raw_features_incl_impute
 write.csv(submission, "submit/017_xgb_poisson_recv_with_square_cube_transform.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
 write.csv(submission, "submit/018_xgb_poisson_recv_with_tsne_and_newfeature1.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
 write.csv(submission, "submit/019_xgb_poisson_recv_with_binary_encode.csv", row.names = FALSE) # 0.6603385 (LB 0.66579)
-write.csv(submission, "submit/020_xgb_poisson_recv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6640989 (LB 0.66857) *
-write.csv(submission, "submit/021_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6640989 (LB 0.66857) *
-write.csv(submission, "submit/022_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_08percent_optcuts.csv", row.names = FALSE) # 0.6645372 (LB 0.66944) *
+write.csv(submission, "submit/020_xgb_poisson_recv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6640989 (LB 0.66857)
+write.csv(submission, "submit/021_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features.csv", row.names = FALSE) # 0.6640989 (LB 0.66857)
+write.csv(submission, "submit/022_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_08percent_optcuts.csv", row.names = FALSE) # 0.6645372 (LB 0.66944)
 write.csv(submission, "submit/023_xgb_poisson_benchmark_para_cv_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts.csv", row.names = FALSE) # 0.6645372 (LB 0.66953)
-write.csv(submission, "submit/024_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts.csv", row.names = FALSE) # 0.6578306 (LB 0.67114) *
-write.csv(submission, "submit/025_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num.csv", row.names = FALSE) # 0.6578306 (LB 0.67114) *
+write.csv(submission, "submit/024_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts.csv", row.names = FALSE) # 0.6578306 (LB 0.67114)
+write.csv(submission, "submit/025_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num.csv", row.names = FALSE) # 0.6578306 (LB 0.67114)
+write.csv(submission, "submit/026_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features.csv", row.names = FALSE) # 0.6576881 (LB 0.67045)
+write.csv(submission, "submit/027_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100.csv", row.names = FALSE) # 0.6576881 (LB 0.67045)
+write.csv(submission, "submit/028_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100_tsne.csv", row.names = FALSE) # 0.6574313 (LB 0.67426) *
 
 
 
