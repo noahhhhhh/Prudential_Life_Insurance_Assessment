@@ -132,18 +132,22 @@ for(s in 1:15){
     #     pred.valid <- pred.valid / 3
     #     pred.test <- pred.test / 3
     
-    set.seed(m * 8 + n * 64 + s * 1024)
-    trainForOpt <- sample(length(pred.train), length(pred.train) * .8)
-    pred.train.forOpt <- pred.train[trainForOpt]
-    cat("optimising the cuts on pred.train ...\n")
-    SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
-        cuts <- c(min(pred.train.forOpt), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train.forOpt))
-        pred <- as.integer(cut2(pred.train.forOpt, cuts))
-        err <- ScoreQuadraticWeightedKappa(pred, y.train[trainForOpt], 1, 8)
-        return(-err)
+    optCutsPar <- rep(0, 7)
+    for (j in 1:6){
+        set.seed(m * 8 + n * 64 + s * 1024 + j * 2000)
+        trainForOpt <- sample(length(pred.train), length(pred.train) * .8)
+        pred.train.forOpt <- pred.train[trainForOpt]
+        cat("optimising the cuts on pred.train ...\n")
+        SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
+            cuts <- c(min(pred.train.forOpt), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train.forOpt))
+            pred <- as.integer(cut2(pred.train.forOpt, cuts))
+            err <- ScoreQuadraticWeightedKappa(pred, y.train[trainForOpt], 1, 8)
+            return(-err)
+        }
+        optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
+        optCutsPar <- optCutsPar + optCuts$par
     }
-    optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
-    optCuts
+    optCuts$par <- optCutsPar / 6
     
     cat("applying optCuts on valid ...\n")
     cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
@@ -164,7 +168,7 @@ for(s in 1:15){
     ls.pred.valid.op[[s]] <- pred.valid.op
     ls.pred.test.op[[s]] <- pred.test.op
     
-    # ls.optCuts[[s]] <- optCuts$par
+    ls.optCuts[[s]] <- optCuts$par
 }
 cat("transform the train, valid, and test\n")
 dt.pred.train <- as.data.table(sapply(ls.pred.train, print))
@@ -173,8 +177,8 @@ dt.pred.test <- as.data.table(sapply(ls.pred.test, print))
 cat("transform the op\n")
 dt.pred.valid.op <- as.data.table(sapply(ls.pred.valid.op, print))
 dt.pred.test.op <- as.data.table(sapply(ls.pred.test.op, print))
-# cat("transform optCuts\n")
-# dt.optCuts <- as.data.table(sapply(ls.optCuts, print))
+cat("transform optCuts\n")
+dt.optCuts <- as.data.table(sapply(ls.optCuts, print))
 
 dt.pred.train
 dt.pred.valid
@@ -186,15 +190,15 @@ dt.pred.test.op
 # dt.optCuts
 
 cat("median combine the preds\n")
-pred.train.final <- apply(dt.pred.valid, 1, function(x) median(x))
-pred.valid.final <- apply(dt.pred.valid, 1, function(x) median(x))
-pred.test.final <- apply(dt.pred.test, 1, function(x) median(x))
+pred.train.final <- apply(dt.pred.train, 1, function(x) mean(x))
+pred.valid.final <- apply(dt.pred.valid, 1, function(x) mean(x))
+pred.test.final <- apply(dt.pred.test, 1, function(x) mean(x))
 
 pred.valid.final.op <- apply(dt.pred.valid.op, 1, function(x) median(x))
 pred.test.final.op <- apply(dt.pred.test.op, 1, function(x) median(x))
 
-# cat("median combine the opCuts")
-# opCuts.final <- apply(dt.optCuts, 1, function(x) median(x))
+cat("median combine the opCuts")
+opCuts.final <- apply(dt.optCuts, 1, function(x) mean(x))
 
 # cat("apply opCuts on pred.valid.final")
 # cuts.valid.final <- c(min(pred.valid.final), opCuts.final, max(pred.valid.final))
@@ -219,6 +223,10 @@ score
 # 0.6576881 sane as above but with product_2_1 and without group features (lb 0.67045)
 # 0.6565563 same as above but with group features (all engineed features) and 100 min_child_weight (lb 0.67343)
 # 0.6574313 same as above but with tsne (lb 0.67426) *
+# 0.6569404 same as above but optim cut after all, rather than in each loop (lb 0.67131)
+# 0.6543513 same as above, just train fold (k = 10) (lb 0.66891)
+# 0.6636679 same as above, just train on 90% train and 6 fold prediciton (lb 0.66994)
+# 0.6567266 tsnes and kmeans (lb 0.67024)
 
 ################################
 ## 1.3 submit ##################
@@ -248,6 +256,10 @@ write.csv(submission, "submit/025_xgb_poisson_recv_feval_08trai02valid_with_impu
 write.csv(submission, "submit/026_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features.csv", row.names = FALSE) # 0.6576881 (LB 0.67045)
 write.csv(submission, "submit/027_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100.csv", row.names = FALSE) # 0.6576881 (LB 0.67045)
 write.csv(submission, "submit/028_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100_tsne.csv", row.names = FALSE) # 0.6574313 (LB 0.67426) *
+write.csv(submission, "submit/029_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100_tsne_optim_afterall.csv", row.names = FALSE) # 0.6569404 (LB 0.67131)
+write.csv(submission, "submit/030_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100_tsne_optim_afterall_trainfold.csv", row.names = FALSE) # 0.6543513 (LB 0.66891)
+write.csv(submission, "submit/031_xgb_poisson_recv_feval_09trai01valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100_tsne_10k.csv", row.names = FALSE) # 0.6543513 (LB 0.66891)
+write.csv(submission, "submit/032_xgb_poisson_recv_feval_09trai01valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100_tnses_kmeans.csv", row.names = FALSE) # 0.6543513 (LB 0.66891)
 
 
 
