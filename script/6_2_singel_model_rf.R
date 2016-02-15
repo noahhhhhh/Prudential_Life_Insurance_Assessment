@@ -16,13 +16,9 @@ require(xgboost)
 require(Ckmeans.1d.dp)
 cat("prepare train, valid, and test data set...\n")
 set.seed(888)
-ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F) # remember to change it to .66
+ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .8, list = F) # remember to change it to .66
 dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
 dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
-set.seed(888)
-ind.valid <- createDataPartition(dt.valid$Response, p = .5, list = F)
-dt.valid1 <- dt.valid[ind.valid]
-dt.valid2 <- dt.valid[-ind.valid]
 dt.test <- dt.preprocessed.combine[isTest == 1]
 dim(dt.train); dim(dt.valid); dim(dt.test)
 
@@ -34,16 +30,7 @@ x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[,
 y.valid <- dt.valid$Response
 dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
 
-x.valid1 <- model.matrix(Response ~., dt.valid1[, !c("Id", "isTest"), with = F])[, -1]
-y.valid1 <- dt.valid1$Response
-dmx.valid1 <- xgb.DMatrix(data =  x.valid1, label = y.valid1)
-
-x.valid2 <- model.matrix(Response ~., dt.valid2[, !c("Id", "isTest"), with = F])[, -1]
-y.valid2 <- dt.valid2$Response
-dmx.valid2 <- xgb.DMatrix(data =  x.valid2, label = y.valid2)
-
 x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
-
 ################################
 ## 1.2 train ###################
 ################################
@@ -65,21 +52,24 @@ md.rf <- ranger(Response ~.
 
 pred.train <- predict(md.rf, dt.train)
 pred.train <- predictions(pred.train)
-# pred.train <- as.integer(pred.train)
 
 pred.valid <- predict(md.rf, dt.valid)
 pred.valid <- predictions(pred.valid)
-# pred.valid <- as.integer(pred.valid)
 
 pred.test <- predict(md.rf, dt.test)
 pred.test <- predictions(pred.test)
-# pred.test <- as.integer(pred.test)
+
+## save ##
+save(pred.train, pred.valid, pred.test, ind.train, file = "model/rf.RData")
 
 cat("optimising the cuts on pred.train ...\n")
+set.seed(1024)
+trainForOpt <- sample(length(pred.train), length(pred.train) * .8)
+pred.train.forOpt <- pred.train[trainForOpt]
 SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
-    cuts <- c(min(pred.train), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train))
-    pred <- as.integer(cut2(pred.train, cuts))
-    err <- ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
+    cuts <- c(min(pred.train.forOpt), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train.forOpt))
+    pred <- as.integer(cut2(pred.train.forOpt, cuts))
+    err <- ScoreQuadraticWeightedKappa(pred, y.train[trainForOpt], 1, 8)
     return(-err)
 }
 
@@ -91,15 +81,11 @@ cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
 pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
 score <- ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)
 score
-# [1] 0.6265719 (originally .550676; num.trees = 500, regression tree on raw features)
-# [1] 0.5286518 (originally .5286518; num.trees = 500, classification tree on raw features)
-# [1] 0.6444031 (originally .5558768; num.trees = 5000, regression tree on raw features)
-# [1] 0.6450072 (originally .5546783; num.trees = 3500, mtry = 36, regression tree on 4 new group feature) *
+# 0.6359023
 
 cat("applying optCuts on test ...\n")
 cuts.test <- c(min(pred.test), optCuts$par, max(pred.test))
 pred.test.op <- as.integer(cut2(pred.test, cuts.test))
-
 
 
 

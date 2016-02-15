@@ -9,24 +9,17 @@ require(caret)
 ##########################
 ## 1.1 nzv and nearZero ##
 ##########################
-nzv.train <- nearZeroVar(dt.featureEngineed.combine[isTest == 0, !c("Id", "Response", "isTest"), with = F], saveMetrics = T)
+nzv.train <- nearZeroVar(dt.featureEngineed.combine[isTest == 0, !c("Id", "Response", "isTest"), with = F], freqCut = 95/5, saveMetrics = T)
 nzv.test <- nearZeroVar(dt.featureEngineed.combine[isTest == 1,!c("Id", "Response", "isTest"), with = F], saveMetrics = T)
 
 col.nzv.train <- rownames(nzv.train[nzv.train$nzv, ])
 length(col.nzv.train)
-# [1] 73
-# col.nzv.test <- rownames(nzv.test[nzv.test$nzv, ])
-# length(col.nzv.test)
-# [1] 70
-
-# col.nzv <- union(col.nzv.test, col.nzv.train)
-# length(col.nzv)
-# 143
+# 21
 
 # exclude them (version 1)
 dt.featureEngineed.combine <- dt.featureEngineed.combine[, - col.nzv.train, with = F]
 dim(dt.featureEngineed.combine)
-# [1] 79146   114
+# [1] 79146   134
 
 # select them (version 2)
 # NX: to be continued
@@ -40,8 +33,17 @@ prep.class.ified.combine <- preProcess(dt.featureEngineed.combine[, !c("Id", "Re
                                        , verbose = T)
 dt.featureEngineed.combine <- predict(prep.class.ified.combine, dt.featureEngineed.combine)
 
+#############
+## 1.3 cor ##
+#############
+mx.featureEngineed.combine <- data.matrix(dt.featureEngineed.combine[, !c("Id", "Response", "isTest"), with = F])
+dtCor <- cor(mx.featureEngineed.combine)
+highlyCor <- findCorrelation(dtCor, cutoff = .75)
+dt.featureEngineed.combine <- cbind(dt.featureEngineed.combine[, !c("Id", "Response", "isTest"), with = F][, -highlyCor, with = F]
+                                    , dt.featureEngineed.combine[, c("Id", "Response", "isTest"), with = F])
+
 ####################
-## 1.3 dummyVsars ##
+## 1.4 dummyVsars ##
 ####################
 # levels == 3
 no.of.levels <- sapply(dt.featureEngineed.combine[, colNominal, with = F], function (x) {length(names(table(x)))})

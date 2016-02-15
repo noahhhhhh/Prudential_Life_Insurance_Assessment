@@ -20,37 +20,18 @@ set.seed(888)
 ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .8, list = F) # remember to change it to .66
 dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
 dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
-set.seed(888)
-ind.valid <- createDataPartition(dt.valid$Response, p = .5, list = F)
-dt.valid1 <- dt.valid[ind.valid]
-dt.valid2 <- dt.valid[-ind.valid]
 dt.test <- dt.preprocessed.combine[isTest == 1]
 dim(dt.train); dim(dt.valid); dim(dt.test)
 
-# apply noise on dt.train
-# dim(dt.train)
-# dt.train <- Noise(dt.train, noise_l = 0, noise_u = .00005, col_excl = c(colNominal, "Id", "Response", "isTest"))
-# dim(dt.train)
 x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
-# x.train <- data.matrix(dt.train[, !c("Id", "isTest", "Response"), with = F])
 y.train <- dt.train$Response
 dmx.train <- xgb.DMatrix(data =  x.train, label = y.train)
 
 x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[, -1]
-# x.valid <- data.matrix(dt.valid[, !c("Id", "isTest", "Response"), with = F])
 y.valid <- dt.valid$Response
 dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
 
-# x.valid1 <- model.matrix(Response ~., dt.valid1[, !c("Id", "isTest"), with = F])[, -1]
-# y.valid1 <- dt.valid1$Response
-# dmx.valid1 <- xgb.DMatrix(data =  x.valid1, label = y.valid1)
-
-# x.valid2 <- model.matrix(Response ~., dt.valid2[, !c("Id", "isTest"), with = F])[, -1]
-# y.valid2 <- dt.valid2$Response
-# dmx.valid2 <- xgb.DMatrix(data =  x.valid2, label = y.valid2)
-
 x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
-# x.test <- xgb.DMatrix(data = data.matrix(dt.test[, !c("Id", "isTest", "Response"), with = F]), label = rep(0, dim(dt.test)[1]))
 ################################
 ## 1.2 train ###################
 ################################
@@ -80,7 +61,7 @@ evalerror <- function(preds, dtrain){
 }
 
 cat("training ...\n")
-for(s in 1:15){
+for(s in 1:7){
     # set up a score metric for folds
     pred.train <- rep(0, dim(dt.train)[1])
     pred.valid <- rep(0, dim(dt.valid)[1])
@@ -117,7 +98,7 @@ for(s in 1:15){
                             , feval = evalerror #
                             , early.stop.round = 100
                             # , maximize = F
-                            , maximize = T
+                            , maximize = T #
                             , print.every.n = 150
                             , nrounds = 18000
                             , watchlist = list(valid = dmx.valid, train = dmx.train)
@@ -132,9 +113,9 @@ for(s in 1:15){
     #     pred.valid <- pred.valid / 3
     #     pred.test <- pred.test / 3
     
-    optCutsPar <- rep(0, 7)
-    for (j in 1:6){
-        set.seed(m * 8 + n * 64 + s * 1024 + j * 2000)
+    # optCutsPar <- rep(0, 7)
+    # for (j in 1:6){
+        set.seed(m * 8 + n * 64 + s * 1024)
         trainForOpt <- sample(length(pred.train), length(pred.train) * .8)
         pred.train.forOpt <- pred.train[trainForOpt]
         cat("optimising the cuts on pred.train ...\n")
@@ -145,10 +126,10 @@ for(s in 1:15){
             return(-err)
         }
         optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
-        optCutsPar <- optCutsPar + optCuts$par
-    }
-    optCuts$par <- optCutsPar / 6
-    
+        # optCutsPar <- optCutsPar + optCuts$par
+    # }
+    # optCuts$par <- optCutsPar / 6
+        # 0.656536928228719
     cat("applying optCuts on valid ...\n")
     cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
     pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
@@ -193,6 +174,8 @@ cat("median combine the preds\n")
 pred.train.final <- apply(dt.pred.train, 1, function(x) mean(x))
 pred.valid.final <- apply(dt.pred.valid, 1, function(x) mean(x))
 pred.test.final <- apply(dt.pred.test, 1, function(x) mean(x))
+# save
+save(pred.train.final, pred.valid.final, pred.test.final, file = "model/xgb.RData")
 
 pred.valid.final.op <- apply(dt.pred.valid.op, 1, function(x) median(x))
 pred.test.final.op <- apply(dt.pred.test.op, 1, function(x) median(x))
@@ -227,6 +210,11 @@ score
 # 0.6543513 same as above, just train fold (k = 10) (lb 0.66891)
 # 0.6636679 same as above, just train on 90% train and 6 fold prediciton (lb 0.66994)
 # 0.6567266 tsnes and kmeans (lb 0.67024)
+# 0.6573504 with all_kmeans (lb 0.67077)
+# 0.6561871 with lr faetures (lb 0.67183)
+# 0.6591701 using lr's ind.train with tsne and group features (lb 0.66875)
+# 0.657739 try to reproduce with rmse (lb 0.67258)
+# 0.6565868 try to reproduce with eval (lb 0.67286)
 
 ################################
 ## 1.3 submit ##################
@@ -234,11 +222,7 @@ score
 submission = data.table(Id = dt.test$Id)
 submission$Response = round(pred.test.final.op)
 table(submission$Response)
-# 1    2    3    4    5    6    7    8 
-# 1715  934 1504 1693 2259 2672 3333 5655
 
-# 1    2    3    4    5    6    7    8 
-# 1663 1127 1419 1632 2193 2539 3648 5544
 write.csv(submission, "submit/011_xgb_poisson_recv_with_all_features.csv", row.names = FALSE) # 0.6601923 (highest) (LB 0.66819)
 write.csv(submission, "submit/013_xgb_poisson_recv_with_all_features_excl_impute_1.csv", row.names = FALSE) # 0.6601923 (LB 0.66719)
 write.csv(submission, "submit/014_xgb_poisson_recv_with_raw_features_excl_impute_1.csv", row.names = FALSE) # 0.6592457 (LB 0.66677)
@@ -260,6 +244,12 @@ write.csv(submission, "submit/029_xgb_poisson_recv_feval_08trai02valid_with_impu
 write.csv(submission, "submit/030_xgb_poisson_recv_feval_08trai02valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100_tsne_optim_afterall_trainfold.csv", row.names = FALSE) # 0.6543513 (LB 0.66891)
 write.csv(submission, "submit/031_xgb_poisson_recv_feval_09trai01valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100_tsne_10k.csv", row.names = FALSE) # 0.6543513 (LB 0.66891)
 write.csv(submission, "submit/032_xgb_poisson_recv_feval_09trai01valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100_tnses_kmeans.csv", row.names = FALSE) # 0.6543513 (LB 0.66891)
+write.csv(submission, "submit/033_xgb_poisson_recv_feval_09trai01valid_with_impute_1_and_all_engineed_features_with_dummy_vars_with_08percent_optcuts_with_product_2_num_and_product_2_1_without_group_features_min_child_weight_100_tnse_and_all_kmeans.csv", row.names = FALSE) # 0.6573504 (LB 0.67175)
+write.csv(submission, "submit/034_xgb_with_Family_Hist_Kmeans_Medical_Keyword_Kmeans_eta_002.csv", row.names = FALSE) # 0.6573504 (LB 0.67175)
+write.csv(submission, "submit/035_xgb_with_regression_features.csv", row.names = FALSE) # 0.6561871 (LB 0.67183)
+write.csv(submission, "submit/036_xgb_using_lrs_ind_train.csv", row.names = FALSE) # 0.6561871 (LB 0.67183)
+write.csv(submission, "submit/037_xgb_try_to_reproduce.csv", row.names = FALSE) # 0.657739 (LB 0.67258)
+write.csv(submission, "submit/038_xgb_try_to_reproduce.csv", row.names = FALSE) # 0.6565868 (LB 0.67286)
 
 
 

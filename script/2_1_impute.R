@@ -73,10 +73,16 @@ colnames.discrete.NAs
 # 0.94                0.98 
 
 # impute Medical History 10, 24, 32
+# dt.raw.combine[, Medical_History_10_Impute_1 := ifelse(is.na(dt.raw.combine$Medical_History_10), -1, dt.raw.combine$Medical_History_10)]
+# dt.raw.combine[, Medical_History_24_Impute_1 := ifelse(is.na(dt.raw.combine$Medical_History_24), -1, dt.raw.combine$Medical_History_24)]
+# dt.raw.combine[, Medical_History_32_Impute_1 := ifelse(is.na(dt.raw.combine$Medical_History_32), -1, dt.raw.combine$Medical_History_32)]
+# colDiscrete <- c(colDiscrete, "Medical_History_10_Impute_1", "Medical_History_24_Impute_1", "Medical_History_32_Impute_1")
+
 # simply remove Medical History 24, 32
 dt.raw.combine[, Medical_History_10 := NULL]
 dt.raw.combine[, Medical_History_24 := NULL]
 dt.raw.combine[, Medical_History_32 := NULL]
+
 # remove from colDiscrete
 colDiscrete <- colDiscrete[!colDiscrete %in% c("Medical_History_10", "Medical_History_24", "Medical_History_32")]
 
@@ -150,7 +156,7 @@ colNominal <- c("NewFeature1", colNominal)
 #                    , "Insurance_History_5_Impute_Median", "Family_Hist_2_Impute_Median", "Family_Hist_3_Impute_Median"
 #                    , "Family_Hist_4_Impute_Median", "Family_Hist_5_Impute_Median")
 
-# # impute as a very large number 1 (version 2)
+# impute as a very large number 1 (version 2)
 dt.raw.combine[, Employment_Info_1_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_1), -1, dt.raw.combine$Employment_Info_1)]
 dt.raw.combine[, Employment_Info_4_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_4), -1, dt.raw.combine$Employment_Info_4)]
 dt.raw.combine[, Employment_Info_6_Impute_1 := ifelse(is.na(dt.raw.combine$Employment_Info_6), -1, dt.raw.combine$Employment_Info_6)]

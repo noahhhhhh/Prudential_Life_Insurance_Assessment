@@ -68,123 +68,145 @@ dt.class.ified.combine[, Med_Keywords_Count := rowSums(dt.medKeywords) - 48]
 colDiscrete <- c(colDiscrete, "Med_Keywords_Count")
 
 ############################################################################################
-## 8.0 kmeans ##############################################################################
+## 8.0 lr features #########################################################################
 ############################################################################################
-colnames <- names(dt.class.ified.combine)
-## scale
-prep.class.ified.combine <- preProcess(dt.class.ified.combine[, !c("Id", "Response", "isTest"), with = F]
-                                       # , method = c("range")
-                                       , method = c("center", "scale")
-                                       , verbose = T)
-dt.class.ified.combine.scale <- predict(prep.class.ified.combine, dt.class.ified.combine)
+qbmic <- 0.8
+qbmic2 <- 0.9
+#Hand engineered features. Found by EDA (especially added variable plots), some parameters optimized
+#using cross validation. Nonlinear dependence on BMI and its interaction with age make intuitive sense.
+dt.class.ified.combine$custom_var_1 <- as.numeric(dt.class.ified.combine$Medical_History_15 < 10.0)
+dt.class.ified.combine$custom_var_1[is.na(dt.class.ified.combine$custom_var_1)] <- 0.0 #impute these NAs with 0s, note that they were not median-imputed
+dt.class.ified.combine$custom_var_3 <- as.numeric(dt.class.ified.combine$Product_Info_4 < 0.075)
+dt.class.ified.combine$custom_var_4 <- as.numeric(dt.class.ified.combine$Product_Info_4 == 1)
+dt.class.ified.combine$custom_var_6 <- (dt.class.ified.combine$BMI + 1.0)**2.0
+dt.class.ified.combine$custom_var_7 <- (dt.class.ified.combine$BMI)**0.8
+dt.class.ified.combine$custom_var_8 <- dt.class.ified.combine$Ins_Age**8.5
+dt.class.ified.combine$custom_var_9 <- (dt.class.ified.combine$BMI*dt.class.ified.combine$Ins_Age)**2.5
+BMI_cutoff <- quantile(dt.class.ified.combine$BMI, qbmic)
+dt.class.ified.combine$custom_var_10 <- as.numeric(dt.class.ified.combine$BMI > BMI_cutoff)
+dt.class.ified.combine$custom_var_11 <- (dt.class.ified.combine$BMI*dt.class.ified.combine$Product_Info_4)**0.9
+ageBMI_cutoff <- quantile(dt.class.ified.combine$Ins_Age*dt.class.ified.combine$BMI, qbmic2)
+dt.class.ified.combine$custom_var_12 <- as.numeric(dt.class.ified.combine$Ins_Age*dt.class.ified.combine$BMI > ageBMI_cutoff)
+dt.class.ified.combine$custom_var_13 <- (dt.class.ified.combine$BMI*(as.numeric(dt.class.ified.combine$Medical_Keyword_3) - 1) + 0.5)**3.0
 
-#####################
-## Employment_Info ##
-#####################
-cat("kmeans of Employment_Info ...")
-set.seed(888)
-md.kmeans.employment_info <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Employment_Info", colnames)], with = F]
-                                    , centers = 8
-                                    , nstart = 20)
-Employment_Info_Kmeans <- md.kmeans.employment_info$cluster
-
-##################
-## Product_Info ##
-##################
-cat("kmeans of Product_Info ...")
-set.seed(888)
-md.kmeans.product_info <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Product_Info", colnames)], with = F]
-                                 , centers = 8
-                                 , nstart = 20)
-Product_Info_Kmeans <- md.kmeans.product_info$cluster
-
-#################
-## InsuredInfo ##
-#################
-cat("kmeans of InsuredInfo ...")
-set.seed(888)
-md.kmeans.insuredinfo <- kmeans(dt.class.ified.combine.scale[, colnames[grep("InsuredInfo", colnames)], with = F]
-                                , centers = 8
-                                , nstart = 20)
-InsuredInfo_Kmeans <- md.kmeans.insuredinfo$cluster
-
-#######################
-## Insurance_History ##
-#######################
-cat("kmeans of Insurance_History ...")
-set.seed(888)
-md.kmeans.insured_history <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Insurance_History", colnames)], with = F]
-                                    , centers = 8
-                                    , nstart = 20)
-Insurance_History_Kmeans <- md.kmeans.insured_history$cluster
-
-#################
-## Family_Hist ##
-#################
-cat("kmeans of Family_Hist ...")
-set.seed(888)
-md.kmeans.family_hist <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Family_Hist", colnames)], with = F]
-                                , centers = 8
-                                , nstart = 20)
-Family_Hist_Kmeans <- md.kmeans.family_hist$cluster
-
-#####################
-## Medical_History ##
-#####################
-cat("kmeans of Medical_History ...")
-set.seed(888)
-md.kmeans.medical_history <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Medical_History", colnames)], with = F]
-                                    , centers = 8
-                                    , nstart = 20)
-Medical_History_Kmeans <- md.kmeans.medical_history$cluster
-
-#####################
-## Medical_Keyword ##
-#####################
-cat("kmeans of Medical_Keyword ...")
-set.seed(888)
-md.kmeans.medical_keyword <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Medical_Keyword", colnames)], with = F]
-                                    , centers = 8
-                                    , nstart = 20)
-Medical_Keyword_Kmeans <- md.kmeans.medical_keyword$cluster
-
-#########
-## All ##
-#########
-cat("kmeans of all ...")
-set.seed(888)
-md.kmeans.all <- kmeans(dt.class.ified.combine.scale[, !c("Id", "Response", "isTest"), with = F]
-                                    , centers = 8
-                                    , nstart = 20)
-All_Kmeans <- md.kmeans.all$cluster
-
-save(Employment_Info_Kmeans
-     , Product_Info_Kmeans
-     , InsuredInfo_Kmeans
-     , Insurance_History_Kmeans
-     , Family_Hist_Kmeans
-     , Medical_History_Kmeans
-     , Medical_Keyword_Kmeans
-     , All_Kmeans
-     , file = "data/data_meta/kmeans.RData")
-
-#####################################
-## add the kmeans meta features in ##
-#####################################
-load("data/data_meta/kmeans.RData")
-dt.class.ified.combine[, Employment_Info_Kmeans := Employment_Info_Kmeans]
-dt.class.ified.combine[, Product_Info_Kmeans := Product_Info_Kmeans]
-dt.class.ified.combine[, InsuredInfo_Kmeans := InsuredInfo_Kmeans]
-dt.class.ified.combine[, Insurance_History_Kmeans := Insurance_History_Kmeans]
-dt.class.ified.combine[, Family_Hist_Kmeans := Family_Hist_Kmeans]
-dt.class.ified.combine[, Medical_History_Kmeans := Medical_History_Kmeans]
-dt.class.ified.combine[, Medical_Keyword_Kmeans := Medical_Keyword_Kmeans]
-dt.class.ified.combine[, All_Kmeans := All_Kmeans]
-
-colNominal <- c(colNominal, "Employment_Info_Kmeans", "Product_Info_Kmeans"
-                , "InsuredInfo_Kmeans", "Insurance_History_Kmeans"
-                , "Family_Hist_Kmeans", "Medical_History_Kmeans"
-                , "Medical_Keyword_Kmeans", "All_Kmeans")
+# ############################################################################################
+# ## 8.0 kmeans ##############################################################################
+# ############################################################################################
+# colnames <- names(dt.class.ified.combine)
+# ## scale
+# prep.class.ified.combine <- preProcess(dt.class.ified.combine[, !c("Id", "Response", "isTest"), with = F]
+#                                        # , method = c("range")
+#                                        , method = c("center", "scale")
+#                                        , verbose = T)
+# dt.class.ified.combine.scale <- predict(prep.class.ified.combine, dt.class.ified.combine)
+# 
+# #####################
+# ## Employment_Info ##
+# #####################
+# cat("kmeans of Employment_Info ...")
+# set.seed(888)
+# md.kmeans.employment_info <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Employment_Info", colnames)], with = F]
+#                                     , centers = 8
+#                                     , nstart = 20)
+# Employment_Info_Kmeans <- md.kmeans.employment_info$cluster
+# 
+# ##################
+# ## Product_Info ##
+# ##################
+# cat("kmeans of Product_Info ...")
+# set.seed(888)
+# md.kmeans.product_info <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Product_Info", colnames)], with = F]
+#                                  , centers = 8
+#                                  , nstart = 20)
+# Product_Info_Kmeans <- md.kmeans.product_info$cluster
+# 
+# #################
+# ## InsuredInfo ##
+# #################
+# cat("kmeans of InsuredInfo ...")
+# set.seed(888)
+# md.kmeans.insuredinfo <- kmeans(dt.class.ified.combine.scale[, colnames[grep("InsuredInfo", colnames)], with = F]
+#                                 , centers = 8
+#                                 , nstart = 20)
+# InsuredInfo_Kmeans <- md.kmeans.insuredinfo$cluster
+# 
+# #######################
+# ## Insurance_History ##
+# #######################
+# cat("kmeans of Insurance_History ...")
+# set.seed(888)
+# md.kmeans.insured_history <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Insurance_History", colnames)], with = F]
+#                                     , centers = 8
+#                                     , nstart = 20)
+# Insurance_History_Kmeans <- md.kmeans.insured_history$cluster
+# 
+# #################
+# ## Family_Hist ##
+# #################
+# cat("kmeans of Family_Hist ...")
+# set.seed(888)
+# md.kmeans.family_hist <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Family_Hist", colnames)], with = F]
+#                                 , centers = 8
+#                                 , nstart = 20)
+# Family_Hist_Kmeans <- md.kmeans.family_hist$cluster
+# 
+# #####################
+# ## Medical_History ##
+# #####################
+# cat("kmeans of Medical_History ...")
+# set.seed(888)
+# md.kmeans.medical_history <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Medical_History", colnames)], with = F]
+#                                     , centers = 8
+#                                     , nstart = 20)
+# Medical_History_Kmeans <- md.kmeans.medical_history$cluster
+# 
+# #####################
+# ## Medical_Keyword ##
+# #####################
+# cat("kmeans of Medical_Keyword ...")
+# set.seed(888)
+# md.kmeans.medical_keyword <- kmeans(dt.class.ified.combine.scale[, colnames[grep("Medical_Keyword", colnames)], with = F]
+#                                     , centers = 8
+#                                     , nstart = 20)
+# Medical_Keyword_Kmeans <- md.kmeans.medical_keyword$cluster
+# 
+# #########
+# ## All ##
+# #########
+# cat("kmeans of all ...")
+# set.seed(888)
+# md.kmeans.all <- kmeans(dt.class.ified.combine.scale[, !c("Id", "Response", "isTest"), with = F]
+#                                     , centers = 8
+#                                     , nstart = 20)
+# All_Kmeans <- md.kmeans.all$cluster
+# 
+# save(Employment_Info_Kmeans
+#      , Product_Info_Kmeans
+#      , InsuredInfo_Kmeans
+#      , Insurance_History_Kmeans
+#      , Family_Hist_Kmeans
+#      , Medical_History_Kmeans
+#      , Medical_Keyword_Kmeans
+#      , All_Kmeans
+#      , file = "data/data_meta/kmeans.RData")
+# 
+# #####################################
+# ## add the kmeans meta features in ##
+# #####################################
+# load("data/data_meta/kmeans.RData")
+# # dt.class.ified.combine[, Employment_Info_Kmeans := Employment_Info_Kmeans] # cor 0.03960969
+# # dt.class.ified.combine[, Product_Info_Kmeans := Product_Info_Kmeans] # cor -0.06764473
+# # dt.class.ified.combine[, InsuredInfo_Kmeans := InsuredInfo_Kmeans] # cor 0.004206334
+# # dt.class.ified.combine[, Insurance_History_Kmeans := Insurance_History_Kmeans] # cor 0.03283608
+# dt.class.ified.combine[, Family_Hist_Kmeans := Family_Hist_Kmeans] # cor -0.1525978
+# # dt.class.ified.combine[, Medical_History_Kmeans := Medical_History_Kmeans] # cor 0.0653399
+# dt.class.ified.combine[, Medical_Keyword_Kmeans := Medical_Keyword_Kmeans] # cor 0.1492812
+# # dt.class.ified.combine[, All_Kmeans := All_Kmeans] # cor 0.009150402
+# 
+# colNominal <- c(colNominal, "Employment_Info_Kmeans", "Product_Info_Kmeans"
+#                 , "InsuredInfo_Kmeans", "Insurance_History_Kmeans"
+#                 , "Family_Hist_Kmeans", "Medical_History_Kmeans"
+#                 , "Medical_Keyword_Kmeans", "All_Kmeans")
 
 ############################################################################################
 ## 9.0 t-sne ###############################################################################

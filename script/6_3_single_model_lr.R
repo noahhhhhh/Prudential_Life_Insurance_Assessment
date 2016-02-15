@@ -1,112 +1,148 @@
-rm(list = ls()); gc();
-setwd("/Volumes/Data Science/Google Drive/data_science_competition/kaggle/Prudential_Life_Insurance_Assessment/")
-load("data/data_preprocess/dt_proprocess_combine.RData")
-source("script/utilities/metrics.R")
-require(data.table)
-require(caret)
-require(Metrics)
-require(Hmisc)
-############################################################################################
-## 1.0 linear regression ###################################################################
-############################################################################################
-################################
-## 1.1 train, valid, and test ##
-################################
-require(xgboost)
-require(Ckmeans.1d.dp)
-cat("prepare train, valid, and test data set...\n")
-set.seed(888)
-ind.train <- createDataPartition(dt.preprocessed.combine[isTest == 0]$Response, p = .9, list = F) # remember to change it to .66
-dt.train <- dt.preprocessed.combine[isTest == 0][ind.train]
-dt.valid <- dt.preprocessed.combine[isTest == 0][-ind.train]
-set.seed(888)
-ind.valid <- createDataPartition(dt.valid$Response, p = .5, list = F)
-dt.valid1 <- dt.valid[ind.valid]
-dt.valid2 <- dt.valid[-ind.valid]
-dt.test <- dt.preprocessed.combine[isTest == 1]
-dim(dt.train); dim(dt.valid); dim(dt.test)
+#Load libraries
+library(MASS)
+set.seed(25) #set seed (just in case)
 
-x.train <- model.matrix(Response ~., dt.train[, !c("Id", "isTest"), with = F])[, -1]
-y.train <- dt.train$Response
-dmx.train <- xgb.DMatrix(data =  x.train, label = y.train)
-
-x.valid <- model.matrix(Response ~., dt.valid[, !c("Id", "isTest"), with = F])[, -1]
-y.valid <- dt.valid$Response
-dmx.valid <- xgb.DMatrix(data =  x.valid, label = y.valid)
-
-x.valid1 <- model.matrix(Response ~., dt.valid1[, !c("Id", "isTest"), with = F])[, -1]
-y.valid1 <- dt.valid1$Response
-dmx.valid1 <- xgb.DMatrix(data =  x.valid1, label = y.valid1)
-
-x.valid2 <- model.matrix(Response ~., dt.valid2[, !c("Id", "isTest"), with = F])[, -1]
-y.valid2 <- dt.valid2$Response
-dmx.valid2 <- xgb.DMatrix(data =  x.valid2, label = y.valid2)
-
-x.test <- model.matrix(~., dt.preprocessed.combine[isTest == 1, !c("Id", "isTest", "Response"), with = F])[, -1]
-
-################################
-## 1.2 train ###################
-################################
-require(glmnet)
-grid <- 10^seq(1, -5, length = 100)
-
-vec.alpha <- as.numeric()
-vec.lambda <- as.numeric()
-vec.score <- as.numeric()
-for (alpha in seq(0, 1, by = .1)){
-    cat("train ...\n")
-    md.lasso <- glmnet(x.train, y.train, alpha = alpha, lambda = grid, standardize = F, family = "gaussian")
-    plot(md.lasso)
-    
-    cat("cv to choose λ ...\n")
-    set.seed(1)
-    cv.out <- cv.glmnet(x.train, y.train, alpha = alpha, lambda = grid, type.measure = "mse", family = "gaussian")
-    plot(cv.out)
-    cv.out$lambda
-    bestlam <- cv.out$lambda.min
-    
-    cat("optimising the cuts on pred.train ...\n")
-    pred.train <- predict(md.lasso , s = bestlam , newx = x.train)
-    SQWKfun <- function(x = seq(1.5, 7.5, by = 1)){
-        cuts <- c(min(pred.train), x[1], x[2], x[3], x[4], x[5], x[6], x[7], max(pred.train))
-        pred <- as.integer(cut2(pred.train, cuts))
-        err <- ScoreQuadraticWeightedKappa(pred, y.train, 1, 8)
-        return(-err)
+#Function that imputes numeric missing values by column-by-column median substitution
+#despite the for loops this is probably the best way to do it:
+#http://stackoverflow.com/questions/23242389/median-imputation-using-sapply
+manage_na <- function(datafra)
+{
+    for(i in 1:ncol(datafra))
+    {
+        if(is.numeric(datafra[,i]))
+        {
+            datafra[is.na(datafra[,i]),i] <- median(datafra[!is.na(datafra[,i]),i])
+        }
     }
-    
-    optCuts <- optim(seq(1.5, 7.5, by = 1), SQWKfun)
-    optCuts
-    
-    cat("applying optCuts on valid ...\n")
-    pred.valid <- predict(md.lasso , s = bestlam , newx = x.valid)
-    cuts.valid <- c(min(pred.valid), optCuts$par, max(pred.valid))
-    pred.valid.op <- as.integer(cut2(pred.valid, cuts.valid))
-    score <- ScoreQuadraticWeightedKappa(y.valid, pred.valid.op)
-    score
-    # [1] 0.6211766 (alpha = .5, with 4 groups and raw continuous features)
-    # [1] 0.5672361 (alpha = .5, with 4 groups and raw continuous features, removed nzv)
-    # [1] 0.6080889 (alpha = .5, with 4 groups, no raw continuous features)
-    # [1] 0.6134094 (alpha = .5, with raw features)
-    # [1] 0.6211766 (alpha = .5, with 4 groups and raw continuous features, mulitinomial)
-    
-    print(paste("-------- alpha:", alpha, "; lambda:", bestlam, "; score:", score))
-    
-    vec.alpha <- c(vec.alpha, alpha)
-    vec.lambda <- c(vec.lambda, bestlam)
-    vec.score <- c(vec.score, score)
-    
+    datafra
 }
 
-dt.result <- data.table(alpha = vec.alpha, lambda = vec.lambda, score = vec.score)
-dt.result
-# 1:   0.0 1.149757e-05 0.6212898
-# 2:   0.1 1.149757e-05 0.6208407
-# 3:   0.2 1.321941e-05 0.6202872
-# 4:   0.3 1.149757e-05 0.6218982
-# 5:   0.4 1.149757e-05 0.6209894
-# 6:   0.5 1.149757e-05 0.6220926
-# 7:   0.6 1.149757e-05 0.6191370
-# 8:   0.7 1.149757e-05 0.6211452
-# 9:   0.8 1.149757e-05 0.6207254
-# 10:   0.9 1.149757e-05 0.6192319
-# 11:   1.0 1.149757e-05 0.6225585 *
+#Nonlinear transformation of the labels (this is key to a decent score with a simple model)
+#The hardcoded values were obtained by optimizing a CV score using simulated annealing
+nonlintra <- function(y)
+{
+    hardcoded_values <- c(-1.6, 0.7, 0.3, 3.15, 4.53, 6.5, 6.77, 9.0)
+    return(hardcoded_values[y])
+}
+
+predict_labels <- function(tra, test)
+{
+    ##----Reducing the number of features via ridge regression ---------------------------------------
+    #Making a new dataframe with no Id, no Response, and only numeric variables, then using ridge regression
+    #to remove some variables. The cutoff was optimized via cross-validation.
+    tra_clean <- manage_na(tra[,-c(1,3,128)])
+    ogg <- lm.ridge(tra$Response ~ ., data=tra_clean, lambda=0.5)
+    impo <- tra_clean[,(abs(ogg$coef) > quantile(abs(ogg$coef), 0.382))] #only "important" variables left
+    var_names <- names(impo) #their names
+    ##------------------------------------------------------------------------------------------------
+    
+    ##----Nonlinear transformation of the labels -----------------------------------------------------
+    y <- nonlintra(tra$Response) #nonlinear transformation of the labels
+    ##------------------------------------------------------------------------------------------------
+    
+    ##----Feature engineering-------------------------------------------------------------------------
+    #Quantile cut-off used to define custom variables 10 and 12 (step functions over BMI and BMI*Ins_Age)
+    qbmic <- 0.8
+    qbmic2 <- 0.9
+    #Hand engineered features. Found by EDA (especially added variable plots), some parameters optimized
+    #using cross validation. Nonlinear dependence on BMI and its interaction with age make intuitive sense.
+    custom_var_1 <- as.numeric(tra$Medical_History_15 < 10.0)
+    custom_var_1[is.na(custom_var_1)] <- 0.0 #impute these NAs with 0s, note that they were not median-imputed
+    custom_var_3 <- as.numeric(tra$Product_Info_4 < 0.075)
+    custom_var_4 <- as.numeric(tra$Product_Info_4 == 1)
+    custom_var_6 <- (tra$BMI + 1.0)**2.0
+    custom_var_7 <- (tra$BMI)**0.8
+    custom_var_8 <- tra$Ins_Age**8.5
+    custom_var_9 <- (tra$BMI*tra$Ins_Age)**2.5
+    BMI_cutoff <- quantile(tra$BMI, qbmic)
+    custom_var_10 <- as.numeric(tra$BMI > BMI_cutoff)
+    custom_var_11 <- (tra$BMI*tra$Product_Info_4)**0.9
+    ageBMI_cutoff <- quantile(tra$Ins_Age*tra$BMI, qbmic2)
+    custom_var_12 <- as.numeric(tra$Ins_Age*tra$BMI > ageBMI_cutoff)
+    custom_var_13 <- (tra$BMI*tra$Medical_Keyword_3 + 0.5)**3.0
+    #Add the custom variables to the important variable dataframe
+    impo <- cbind(impo, custom_var_1, custom_var_3, custom_var_4, custom_var_6, custom_var_7, custom_var_8, custom_var_9, custom_var_10, custom_var_11, custom_var_12, custom_var_13)
+    #Remove weight and height, they are very correlated with BMI (we know, but VIFs can be used to show this)
+    impo <- impo[,!(names(impo) %in% c("Ht", "Wt"))]
+    #Same features as above
+    custom_var_1 <- as.numeric(test$Medical_History_15 < 10.0)
+    custom_var_3 <- as.numeric(test$Product_Info_4 < 0.075)
+    custom_var_4 <- as.numeric(test$Product_Info_4 == 1)
+    custom_var_1[is.na(custom_var_1)] <- 0.0
+    custom_var_6 <- (test$BMI + 1.0)**2.0
+    custom_var_7 <- (test$BMI)**0.8
+    custom_var_8 <- test$Ins_Age**8.5
+    custom_var_9 <- (test$BMI*test$Ins_Age)**2.5
+    custom_var_10 <- as.numeric(test$BMI > BMI_cutoff)
+    custom_var_11 <- (test$BMI*test$Product_Info_4)**0.9
+    custom_var_12 <- as.numeric(test$Ins_Age*test$BMI > ageBMI_cutoff)	
+    custom_var_13 <- (test$BMI*test$Medical_Keyword_3 + 0.5)**3.0
+    #Make important variable dataframe for test as well
+    tempo <- manage_na(test[,var_names])
+    tempo <- cbind(tempo, custom_var_1, custom_var_3, custom_var_4, custom_var_6, custom_var_7, custom_var_8, custom_var_9, custom_var_10, custom_var_11, custom_var_12, custom_var_13)
+    #Remove height and weight from there too
+    tempo <- tempo[,!(names(tempo) %in% c("Ht", "Wt"))]
+    ##------------------------------------------------------------------------------------------------
+    
+    ##----Fitting the linear model -------------------------------------------------------------------
+    fa <- tra[,3] #put the factor back in		
+    linear_model <- lm(y ~ ., data=cbind(impo,fa)) #fit the model
+    ##------------------------------------------------------------------------------------------------
+    
+    ##----Predict the response using the linear model ------------------------------------------------
+    fa <- test[,3] 
+    Response <- predict(linear_model, newdata = cbind(tempo,fa))
+    ##------------------------------------------------------------------------------------------------
+    
+    ##----Round using custom cutoffs. These were also optimized with CV ------------------------------
+    hardcoded_cutoffs <- c(0.8717, 0.9034, 0.8119, 0.7567, 0.6588, 0.2360, 0.0490)
+    
+    Response[Response < 1] <- 1
+    Response[Response > (7 + hardcoded_cutoffs[7])] <- 8
+    for(i in 1:6)
+    {
+        lowcut <- hardcoded_cutoffs[i]
+        hicut <- hardcoded_cutoffs[(i + 1)]
+        condi <- (Response > (i + lowcut)) & (Response < (i + 1 + hicut))
+        Response[condi] <- (i + 1)
+    }				
+    Response <- round(Response)
+    ##------------------------------------------------------------------------------------------------
+    
+    return(Response)
+}
+
+tra = read.csv("data/data_raw/train.csv")
+test = read.csv("data/data_raw/test.csv")
+cat("prepare train, valid, and test data set...\n")
+load("model/rf.RData")
+head(ind.train)
+
+load("data/data_preprocess/dt_proprocess_combine.RData")
+dt.train.tmp <- dt.preprocessed.combine[isTest == 0]
+dt.train.tmp.1 <- merge(dt.train.tmp[, c("Id"), with = F], tra, by.x = "Id", by.y = "Id", all.y = T, sort = F)
+tra <- as.data.frame(dt.train.tmp.1)
+
+dt.train <- tra[ind.train, ]
+dt.valid <- tra[-ind.train, ]
+dt.test <- test
+
+cat("train and train")
+response.train <- predict_labels(dt.train, dt.train)
+ScoreQuadraticWeightedKappa(dt.train$Response, response.train)
+# 0.6470751
+cat("train and valid")
+response.valid <- predict_labels(dt.train, dt.valid)
+ScoreQuadraticWeightedKappa(dt.valid$Response, response.valid)
+# 0.640141
+cat("train and test")
+response.test <- predict_labels(dt.train, dt.test)
+# lb 0.64977
+
+Id <- dt.test$Id
+
+outf <- data.frame(Id, Response = response.test)
+write.csv(outf, "submit/linear.csv", row.names = F)
+
+## save ##
+save(ind.train, response.train, response.valid, response.test, file = "model/lr.RData")
